@@ -160,12 +160,6 @@ public class MainRtmpConnection extends RtmpConnection {
         		meeting.getExternUserID());
 
         writeCommandExpectingResult(e.getChannel(), connect);
-        
-		for (IBigBlueButtonClientListener l : context.getListeners()) {
-			l.onConnected();
-		}
-		
-		connected = true;
 	}
 	
 	@Override
@@ -193,6 +187,13 @@ public class MainRtmpConnection extends RtmpConnection {
     public boolean onGetMyUserId(String resultFor, Command command) {
     	if (resultFor.equals("getMyUserId")) {
 	    	context.setMyUserId(Integer.parseInt((String) command.getArg(0)));
+
+			connected = true;
+
+			for (IBigBlueButtonClientListener l : context.getListeners()) {
+				l.onConnected();
+			}
+			
 	    	return true;
     	} else
     		return false;

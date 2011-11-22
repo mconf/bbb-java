@@ -63,8 +63,7 @@ public class BigBlueButtonClient {
 		log.info("My userID is {}", myUserId);
 	}
 
-	public MainRtmpConnection getConnection()
-	{
+	public MainRtmpConnection getConnection() {
 		return mainConnection;
 	}
 
@@ -146,7 +145,6 @@ public class BigBlueButtonClient {
 	}
 
 	public boolean connectBigBlueButton() {
-
 		ClientOptions opt = new ClientOptions();
 		opt.setClientVersionToUse(Utils.fromHex("00000000"));
 		opt.setHost(getJoinService().getServerUrl().toLowerCase().replace("http://", ""));
