@@ -183,7 +183,7 @@ public abstract class JoinServiceBase {
 		if (httpResponse.getStatusLine().getStatusCode() != 200)
 			log.debug("HTTP GET {} return {}", url, httpResponse.getStatusLine().getStatusCode());
 		
-		return EntityUtils.toString(httpResponse.getEntity());
+		return EntityUtils.toString(httpResponse.getEntity()).trim();
 	}
 
 	protected static String checksum(String s) {

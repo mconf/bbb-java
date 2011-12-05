@@ -27,45 +27,48 @@ import org.slf4j.LoggerFactory;
 
 import com.flazr.rtmp.RtmpReader;
 import com.flazr.rtmp.client.ClientOptions;
+import com.flazr.rtmp.server.ServerStream.PublishType;
 import com.flazr.util.Utils;
 
 
-public abstract class IVideoPublishListener {
+public class BbbVideoPublisher {
+	@SuppressWarnings("unused")
+	private static final Logger log = LoggerFactory.getLogger(BbbVideoPublisher.class);
 
-	private static final Logger log = LoggerFactory.getLogger(IVideoPublishListener.class);
-
-	private int userId;
 	public VideoPublishRtmpConnection videoConnection;
 	private String streamName;
-	BigBlueButtonClient context;
+	private BigBlueButtonClient context;
+	private ClientOptions opt;
 	
-	public IVideoPublishListener(int userId, String streamName, RtmpReader reader, BigBlueButtonClient context) {
-		this.userId = userId;
+	public BbbVideoPublisher(BigBlueButtonClient context, RtmpReader reader, String streamName) {
+		this.context = context;
+		this.streamName = streamName;
 
-		ClientOptions opt = new ClientOptions();
+		opt = new ClientOptions();
 		opt.setClientVersionToUse(Utils.fromHex("00000000"));
 		opt.setHost(context.getJoinService().getServerUrl().toLowerCase().replace("http://", ""));
 		opt.setAppName("video/" + context.getJoinService().getJoinedMeeting().getConference());
-		opt.setPublishType(com.flazr.rtmp.server.ServerStream.PublishType.LIVE);
+		opt.setPublishType(PublishType.LIVE);
 		opt.setStreamName(streamName);		
 		opt.setReaderToPublish(reader);
-									
-		this.context = context;
-		this.streamName = streamName;
-				
-		videoConnection = new VideoPublishRtmpConnection(opt, context);
+	}
+	
+	public void setPublishType(PublishType publishType) {
+		opt.setPublishType(publishType);
+	}
+	
+	public void setLoop(boolean loop) {
+		opt.setLoop(loop? Integer.MAX_VALUE: 0);
 	}
 	
 	public void start() {
+		context.getUsersModule().addStream(streamName);
+		videoConnection = new VideoPublishRtmpConnection(opt, context);
 		videoConnection.connect();
 	}
 	
-	public void stop(BigBlueButtonClient bbb) {
-		bbb.getUsersModule().removeStream(streamName);
+	public void stop() {
+		context.getUsersModule().removeStream(streamName);
 		videoConnection.disconnect();
 	}
-	
-	public int getUserId() {
-		return userId;
-	}	
 }

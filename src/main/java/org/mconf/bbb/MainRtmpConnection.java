@@ -34,6 +34,8 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.mconf.bbb.BigBlueButtonClient.OnConnectedListener;
+import org.mconf.bbb.BigBlueButtonClient.OnDisconnectedListener;
 import org.mconf.bbb.api.JoinService0Dot7;
 import org.mconf.bbb.api.JoinService0Dot8;
 import org.mconf.bbb.api.JoinedMeeting;
@@ -167,11 +169,10 @@ public class MainRtmpConnection extends RtmpConnection {
 			ChannelStateEvent e) throws Exception {
 		super.channelDisconnected(ctx, e);
 		log.debug("Rtmp Channel Disconnected");
-		for (IBigBlueButtonClientListener l : context.getListeners()) {
-			l.onDisconnected();
-		}
 		
 		connected = false;
+		for (OnDisconnectedListener l : context.getDisconnectedListeners())
+			l.onDisconnected();
 	}
 
     @SuppressWarnings("unchecked")
@@ -189,10 +190,8 @@ public class MainRtmpConnection extends RtmpConnection {
 	    	context.setMyUserId(Integer.parseInt((String) command.getArg(0)));
 
 			connected = true;
-
-			for (IBigBlueButtonClientListener l : context.getListeners()) {
-				l.onConnected();
-			}
+			for (OnConnectedListener l : context.getConnectedListeners())
+				l.onConnectedSuccessfully();
 			
 	    	return true;
     	} else

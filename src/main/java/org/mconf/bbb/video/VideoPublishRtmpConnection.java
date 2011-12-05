@@ -217,7 +217,6 @@ public class VideoPublishRtmpConnection extends RtmpConnection {
                             && publisher != null && !publisher.isStarted()) {
                             publisher.start(channel, options.getStart(),
                                     options.getLength(), new ChunkSize(4096));
-                            context.getUsersModule().addStream(options.getStreamName());
                         return;
                     }
                     if (publisher != null && code.equals("NetStream.Unpublish.Success")) {
