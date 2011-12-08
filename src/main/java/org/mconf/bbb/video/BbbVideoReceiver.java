@@ -27,17 +27,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.flazr.rtmp.client.ClientOptions;
+import com.flazr.rtmp.message.Video;
 import com.flazr.util.Utils;
 
-public abstract class IVideoListener {
+public abstract class BbbVideoReceiver {
 
-	private static final Logger log = LoggerFactory.getLogger(IVideoListener.class);
+	protected class VideoConnection extends VideoReceiverConnection {
+
+		public VideoConnection(ClientOptions options,
+				BigBlueButtonClient context) {
+			super(options, context);
+		}
+
+		@Override
+		protected void onVideo(Video video) {
+			BbbVideoReceiver.this.onVideo(video);
+		}
+		
+	}
+	
+	private static final Logger log = LoggerFactory.getLogger(BbbVideoReceiver.class);
 
 	private int userId;
 	private String streamName;
-	private VideoRtmpConnection videoConnection;
+	private VideoConnection videoConnection;
 	
-	public IVideoListener(int userId, BigBlueButtonClient context) {
+	public BbbVideoReceiver(int userId, BigBlueButtonClient context) {
 		this.userId = userId;
 
 		ClientOptions opt = new ClientOptions();
@@ -60,8 +75,10 @@ public abstract class IVideoListener {
 		
 		opt.setStreamName(streamName);
 		
-		videoConnection = new VideoRtmpConnection(opt, context);
+		videoConnection = new VideoConnection(opt, context);
 	}
+	
+	abstract protected void onVideo(Video video);
 	
 	public void start() {
 		videoConnection.connect();
@@ -70,8 +87,6 @@ public abstract class IVideoListener {
 	public void stop() {
 		videoConnection.disconnect();
 	}
-	
-	public abstract void onVideo(byte[] aux);
 	
 	public int getUserId() {
 		return userId;

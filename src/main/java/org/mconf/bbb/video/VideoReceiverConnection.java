@@ -51,11 +51,11 @@ import com.flazr.rtmp.message.SetPeerBw;
 import com.flazr.rtmp.message.Video;
 import com.flazr.rtmp.message.WindowAckSize;
 
-public class VideoRtmpConnection extends RtmpConnection {
+public abstract class VideoReceiverConnection extends RtmpConnection {
 
-    private static final Logger log = LoggerFactory.getLogger(VideoRtmpConnection.class);
+    private static final Logger log = LoggerFactory.getLogger(VideoReceiverConnection.class);
     
-	public VideoRtmpConnection(ClientOptions options, BigBlueButtonClient context) {
+	public VideoReceiverConnection(ClientOptions options, BigBlueButtonClient context) {
 		super(options, context);
 	}
 	
@@ -70,7 +70,7 @@ public class VideoRtmpConnection extends RtmpConnection {
 		        pipeline.addLast("handshaker", new ClientHandshakeHandler(options));
 		        pipeline.addLast("decoder", new RtmpDecoder());
 		        pipeline.addLast("encoder", new RtmpEncoder());
-		        pipeline.addLast("handler", VideoRtmpConnection.this);
+		        pipeline.addLast("handler", VideoReceiverConnection.this);
 		        return pipeline;
 			}
 		});
@@ -115,8 +115,7 @@ public class VideoRtmpConnection extends RtmpConnection {
 	                channel.write(new BytesRead(bytesRead));
 	            }
         		
-        		Video video = (Video) message;        		
-        		context.onVideo(video);        		
+	            onVideo((Video) message);
         		        		
         		break;
 	        case COMMAND_AMF0:
@@ -142,7 +141,8 @@ public class VideoRtmpConnection extends RtmpConnection {
                         log.warn("un-handled server result for: {}", resultFor);
                     }
                 } else if(name.equals("onStatus")) {
-                    final Map<String, Object> temp = (Map) command.getArg(0);
+                    @SuppressWarnings("unchecked")
+					final Map<String, Object> temp = (Map<String, Object>) command.getArg(0);
                     final String code = (String) temp.get("code");
                     log.info("onStatus code: {}", code);
                     if (code.equals("NetStream.Failed") // TODO cleanup
@@ -186,8 +186,6 @@ public class VideoRtmpConnection extends RtmpConnection {
         }
 	}
 	
-	public BigBlueButtonClient getContext() {
-		return context;
-	}
+	abstract protected void onVideo(Video video);
 	
 }

@@ -64,4 +64,9 @@ public abstract class RtmpConnection extends ClientHandler implements ChannelFut
 				listener.onConnectedUnsuccessfully();
 		}
 	}	
+	
+	public BigBlueButtonClient getContext() {
+		return context;
+	}
+	
 }

@@ -202,7 +202,8 @@ public class VideoPublishRtmpConnection extends RtmpConnection {
                         logger.warn("un-handled server result for: {}", resultFor);
                     }
                 } else if(name.equals("onStatus")) {
-                    final Map<String, Object> temp = (Map) command.getArg(0);
+                    @SuppressWarnings("unchecked")
+					final Map<String, Object> temp = (Map<String, Object>) command.getArg(0);
                     final String code = (String) temp.get("code");
                     log.debug("onStatus code: {}", code);
                     if (code.equals("NetStream.Failed") // TODO cleanup
@@ -264,8 +265,4 @@ public class VideoPublishRtmpConnection extends RtmpConnection {
 //        }
     }
     
-	public BigBlueButtonClient getContext() {
-		return context;
-	}
-	
 }

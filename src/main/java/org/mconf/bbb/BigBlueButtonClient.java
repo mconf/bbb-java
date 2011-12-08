@@ -34,6 +34,7 @@ import org.mconf.bbb.chat.ChatMessage;
 import org.mconf.bbb.chat.ChatModule;
 import org.mconf.bbb.listeners.IListener;
 import org.mconf.bbb.listeners.ListenersModule;
+import org.mconf.bbb.phone.VoiceConnection;
 import org.mconf.bbb.users.IParticipant;
 import org.mconf.bbb.users.Participant;
 import org.mconf.bbb.users.UsersModule;
@@ -50,6 +51,7 @@ public class BigBlueButtonClient {
 	private static final Logger log = LoggerFactory.getLogger(BigBlueButtonClient.class);
 
 	private MainRtmpConnection mainConnection = null;
+	private VoiceConnection voiceConnection = null;
 
 	private JoinServiceProxy joinServiceProxy = new JoinServiceProxy();
 
@@ -123,9 +125,15 @@ public class BigBlueButtonClient {
 		return mainConnection.connect();
 	}
 
-	@SuppressWarnings("unused")
-	private void connectSip() {
+	public boolean connectSip() {
+		ClientOptions opt = new ClientOptions();
+		opt.setClientVersionToUse(Utils.fromHex("00000000"));
+		opt.setHost(getJoinService().getServerUrl().toLowerCase().replace("http://", ""));
+		opt.setAppName("sip/" + getJoinService().getJoinedMeeting().getConference());
+		log.debug(opt.toString());
 
+		voiceConnection = new VoiceConnection(opt, this);
+		return voiceConnection.connect();
 	}
 
 	public void disconnect() {
@@ -198,12 +206,6 @@ public class BigBlueButtonClient {
 			return false;
 	}
 
-	public boolean onVideo(Video video) {
-		for (OnVideoListener l : videoListeners)
-			l.onVideo(video);
-		return true;
-	}
-
 	public boolean isConnected() {
 		if (mainConnection == null)
 			return false;
@@ -259,9 +261,6 @@ public class BigBlueButtonClient {
 		public void onChangeIsMuted(IListener p);
 		public void onChangeIsTalking(IListener p);
 	}
-	public interface OnVideoListener extends IBbbListener {
-		public void onVideo(Video video);
-	}
 	
 	private Set<OnPublicChatMessageListener> publicChatMessageListeners = new LinkedHashSet<OnPublicChatMessageListener>();
 	private Set<OnPrivateChatMessageListener> privateChatMessageListeners = new LinkedHashSet<OnPrivateChatMessageListener>();
@@ -275,7 +274,6 @@ public class BigBlueButtonClient {
 	private Set<OnListenerJoinedListener> listenerJoinedListeners = new LinkedHashSet<OnListenerJoinedListener>();
 	private Set<OnListenerLeftListener> listenerLeftListeners = new LinkedHashSet<OnListenerLeftListener>();
 	private Set<OnListenerStatusChangeListener> listenerStatusChangeListeners = new LinkedHashSet<OnListenerStatusChangeListener>();
-	private Set<OnVideoListener> videoListeners = new LinkedHashSet<OnVideoListener>();
 	
 	public boolean addPublicChatMessageListener(OnPublicChatMessageListener listener) { return publicChatMessageListeners.add(listener); }
 	public boolean removePublicChatMessageListener(OnPublicChatMessageListener listener) { return publicChatMessageListeners.remove(listener); }
@@ -325,7 +323,4 @@ public class BigBlueButtonClient {
 	public boolean removeListenerStatusChangeListener(OnListenerStatusChangeListener listener) { return listenerStatusChangeListeners.remove(listener); }
 	public Set<OnListenerStatusChangeListener> getListenerStatusChangeListeners() { return listenerStatusChangeListeners; }
 
-	public boolean addVideoListener(OnVideoListener listener) { return videoListeners.add(listener); }
-	public boolean removeVideoListener(OnVideoListener listener) { return videoListeners.remove(listener); }
-	public Set<OnVideoListener> getVideoListeners() { return videoListeners; }
 }
