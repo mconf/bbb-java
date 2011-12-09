@@ -35,7 +35,7 @@ public class BbbVideoPublisher {
 	@SuppressWarnings("unused")
 	private static final Logger log = LoggerFactory.getLogger(BbbVideoPublisher.class);
 
-	public VideoPublishRtmpConnection videoConnection;
+	public VideoPublisherConnection videoConnection;
 	private String streamName;
 	private BigBlueButtonClient context;
 	private ClientOptions opt;
@@ -63,7 +63,7 @@ public class BbbVideoPublisher {
 	
 	public void start() {
 		context.getUsersModule().addStream(streamName);
-		videoConnection = new VideoPublishRtmpConnection(opt, context);
+		videoConnection = new VideoPublisherConnection(opt, context);
 		videoConnection.connect();
 	}
 	

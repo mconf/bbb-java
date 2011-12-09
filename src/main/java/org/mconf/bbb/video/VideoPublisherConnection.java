@@ -59,11 +59,11 @@ import com.flazr.rtmp.message.Metadata;
 import com.flazr.rtmp.message.SetPeerBw;
 import com.flazr.rtmp.message.WindowAckSize;
 
-public class VideoPublishRtmpConnection extends RtmpConnection {
+public class VideoPublisherConnection extends RtmpConnection {
 
-    private static final Logger log = LoggerFactory.getLogger(VideoPublishRtmpConnection.class);
+    private static final Logger log = LoggerFactory.getLogger(VideoPublisherConnection.class);
     
-	public VideoPublishRtmpConnection(ClientOptions options, BigBlueButtonClient context) {
+	public VideoPublisherConnection(ClientOptions options, BigBlueButtonClient context) {
 		super(options, context);
 	}
 	
@@ -78,7 +78,7 @@ public class VideoPublishRtmpConnection extends RtmpConnection {
 		        pipeline.addLast("handshaker", new ClientHandshakeHandler(options));
 		        pipeline.addLast("decoder", new RtmpDecoder());
 		        pipeline.addLast("encoder", new RtmpEncoder());
-		        pipeline.addLast("handler", VideoPublishRtmpConnection.this);
+		        pipeline.addLast("handler", VideoPublisherConnection.this);
 		        return pipeline;
 			}
 		});
