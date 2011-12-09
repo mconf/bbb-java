@@ -48,22 +48,25 @@ import com.flazr.rtmp.RtmpMessage;
 import com.flazr.rtmp.client.ClientHandshakeHandler;
 import com.flazr.rtmp.client.ClientOptions;
 import com.flazr.rtmp.message.AbstractMessage;
+import com.flazr.rtmp.message.Audio;
+import com.flazr.rtmp.message.BytesRead;
 import com.flazr.rtmp.message.Command;
 import com.flazr.rtmp.message.CommandAmf0;
 import com.flazr.rtmp.message.Control;
 import com.flazr.rtmp.message.Metadata;
+import com.flazr.rtmp.message.SetPeerBw;
+import com.flazr.rtmp.message.WindowAckSize;
 import com.flazr.rtmp.server.ServerStream.PublishType;
 
-public class VoiceConnection extends RtmpConnection {
+public abstract class VoiceConnection extends RtmpConnection {
 
     private static final Logger log = LoggerFactory.getLogger(VoiceConnection.class);
-	private boolean connected = false;
-	@SuppressWarnings("unused")
 	private String publishName;
-	@SuppressWarnings("unused")
 	private String playName;
 	@SuppressWarnings("unused")
 	private String codec;
+	private int playStreamId = -1;
+	private int publishStreamId = -1;
     
 	public VoiceConnection(ClientOptions options, BigBlueButtonClient context) {
 		super(options, context);
@@ -93,15 +96,17 @@ public class VoiceConnection extends RtmpConnection {
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
         Amf0Object object = AbstractMessage.object(
                 AbstractMessage.pair("app", options.getAppName()),
-                AbstractMessage.pair("flashVer", "WIN 9,0,124,2"),
+                AbstractMessage.pair("flashVer", "LNX 11,1,102,55"),
                 AbstractMessage.pair("tcUrl", options.getTcUrl()),
                 AbstractMessage.pair("fpad", false),
-                AbstractMessage.pair("audioCodecs", 1639.0),
+                AbstractMessage.pair("capabilities", 239.0),
+                AbstractMessage.pair("audioCodecs", 3575.0),
                 AbstractMessage.pair("videoCodecs", 252.0),
-                AbstractMessage.pair("objectEncoding", 0.0),
-                AbstractMessage.pair("capabilities", 15.0),
-                AbstractMessage.pair("videoFunction", 1.0));
-
+                AbstractMessage.pair("videoFunction", 1.0),
+                AbstractMessage.pair("objectEncoding", 0.0)
+        );
+        log.debug(object.toString());
+        
         /*
          * https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/modules/phone/managers/ConnectionManager.as#L78
          * netConnection.connect(uri, externUID, username);
@@ -109,9 +114,7 @@ public class VoiceConnection extends RtmpConnection {
         JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
         Command connect = new CommandAmf0("connect", object, 
     			meeting.getExternUserID(),
-        		meeting.getFullname());
-
-        connected = true;
+        		context.getMyUserId() + "-" + meeting.getFullname());
         
         writeCommandExpectingResult(e.getChannel(), connect);
 	}
@@ -121,10 +124,6 @@ public class VoiceConnection extends RtmpConnection {
 			ChannelStateEvent e) throws Exception {
 		super.channelDisconnected(ctx, e);
 		log.debug("Rtmp Channel Disconnected");
-		
-		connected = false;
-//		for (OnDisconnectedListener l : context.getDisconnectedListeners())
-//			l.onDisconnected();
 	}
 
     @SuppressWarnings("unchecked")
@@ -132,19 +131,22 @@ public class VoiceConnection extends RtmpConnection {
     	return ((Map<String, Object>) command.getArg(0)).get("code").toString();
     }
     
-//    netConnection.call("voiceconf.call", null, "default", username, dialStr);
+    // netConnection.call("voiceconf.call", null, "default", username, dialStr);
     public void call(Channel channel) {
     	Command command = new CommandAmf0("voiceconf.call", null, 
     			"default",
     			context.getJoinService().getJoinedMeeting().getFullname(), 
-    			context.getJoinService().getJoinedMeeting().getVoicebridge());
+    			context.getJoinService().getJoinedMeeting().getWebvoiceconf());
     	writeCommandExpectingResult(channel, command);
     }
     
 	// https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/modules/phone/managers/ConnectionManager.as#L149
     public boolean onCall(String resultFor, Command command) {
-    	log.debug(command.toString());
-    	return true;
+    	if (resultFor.equals("voiceconf.call")) {
+    		log.debug(command.toString());
+    		return true;
+    	} else
+    		return false;
     }
     
     public void hangup(Channel channel) {
@@ -172,12 +174,8 @@ public class VoiceConnection extends RtmpConnection {
             case METADATA_AMF0:
             case METADATA_AMF3:
                 Metadata metadata = (Metadata) message;
-                if(metadata.getName().equals("onMetaData")) {
-                    log.debug("writing 'onMetaData': {}", metadata);
-                    writer.write(message);
-                } else {
+                if(!metadata.getName().equals("onMetaData"))
                 	log.debug("ignoring metadata: {}", metadata);
-                }
                 break;
 
             case COMMAND_AMF0:
@@ -203,19 +201,27 @@ public class VoiceConnection extends RtmpConnection {
 	                	}
 	                	return;
                     } else if(resultFor.equals("createStream")) {
-                        streamId = ((Double) command.getArg(0)).intValue();
-                        log.debug("streamId to use: {}", streamId);
-                        options.setStreamName(playName);
-//                        options.setStreamName(publishName);
-                        log.debug(options.toString());
-                        channel.write(Command.play(streamId, options));
-                        channel.write(Control.setBuffer(streamId, 0));
+                    	if (playStreamId == -1) {
+                    		playStreamId = ((Double) command.getArg(0)).intValue();
+                            log.debug("playStreamId to use: {}", streamId);
+                    		options.setStreamName(playName);
+							channel.write(Command.play(playStreamId, options));
+						  	channel.write(Control.setBuffer(streamId, 0));
+                    	} else if (publishStreamId == -1) {
+                    		publishStreamId = ((Double) command.getArg(0)).intValue();
+                            log.debug("publishStreamId to use: {}", streamId);
+                            options.setStreamName(publishName);
+                            options.setPublishType(PublishType.LIVE);
+                            channel.write(Command.publish(publishStreamId, options));
+                    	}
 	                } else if (onCall(resultFor, command)) {
 	                	break;
+	                } else {
+	                	log.info("ignoring result: {}", message);
 	                }
-	                context.onCommand(resultFor, command);
 	            } else if (name.equals("successfullyJoinedVoiceConferenceCallback")) {
 	            	onSuccessfullyJoined(command);
+	            	writeCommandExpectingResult(channel, Command.createStream());
 	            	writeCommandExpectingResult(channel, Command.createStream());
 	            } else if (name.equals("disconnectedFromJoinVoiceConferenceCallback")) {
 	            	onDisconnectedFromJoin(command);
@@ -226,12 +232,30 @@ public class VoiceConnection extends RtmpConnection {
 	            }
 	            break;
 	        case AUDIO:
-	        	log.debug("incoming audio message: {}", message);
+                bytesRead += message.getHeader().getSize();
+                if((bytesRead - bytesReadLastSent) > bytesReadWindow) {
+                    logger.debug("sending bytes read ack {}", bytesRead);
+                    bytesReadLastSent = bytesRead;
+                    channel.write(new BytesRead(bytesRead));
+                }
+                onAudio((Audio) message);
 	        	break;
 	        case SHARED_OBJECT_AMF0:
 	        case SHARED_OBJECT_AMF3:
 	        	onSharedObject(channel, (SharedObjectMessage) message);
 	        	break;
+            case WINDOW_ACK_SIZE:
+                WindowAckSize was = (WindowAckSize) message;                
+                if(was.getValue() != bytesReadWindow) {
+                    channel.write(SetPeerBw.dynamic(bytesReadWindow));
+                }                
+                break;
+            case SET_PEER_BW:
+                SetPeerBw spb = (SetPeerBw) message;                
+                if(spb.getValue() != bytesWrittenWindow) {
+                    channel.write(new WindowAckSize(bytesWrittenWindow));
+                }
+                break;
     		default:
     			log.info("ignoring rtmp message: {}", message);
 	        	break;
@@ -269,8 +293,6 @@ public class VoiceConnection extends RtmpConnection {
 		playName = (String) command.getArg(1);
 		codec = (String) command.getArg(2);
 	}
-
-	public boolean isConnected() {
-		return connected;
-	}
+	
+	abstract protected void onAudio(Audio audio);
 }

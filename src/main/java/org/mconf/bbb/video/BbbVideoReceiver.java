@@ -69,7 +69,7 @@ public abstract class BbbVideoReceiver {
 		}
 		
 		if (streamName == null) {
-			log.debug("The userId = {} have no stream");
+			log.debug("The userId = {} have no stream", userId);
 			return;
 		}
 		
@@ -81,11 +81,13 @@ public abstract class BbbVideoReceiver {
 	abstract protected void onVideo(Video video);
 	
 	public void start() {
-		videoConnection.connect();
+		if (videoConnection != null)
+			videoConnection.connect();
 	}
 	
 	public void stop() {
-		videoConnection.disconnect();
+		if (videoConnection != null)
+			videoConnection.disconnect();
 	}
 	
 	public int getUserId() {

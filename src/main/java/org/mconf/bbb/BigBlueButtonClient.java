@@ -42,8 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.flazr.rtmp.client.ClientOptions;
+import com.flazr.rtmp.message.Audio;
 import com.flazr.rtmp.message.Command;
-import com.flazr.rtmp.message.Video;
 import com.flazr.util.Utils;
 
 public class BigBlueButtonClient {
@@ -125,14 +125,20 @@ public class BigBlueButtonClient {
 		return mainConnection.connect();
 	}
 
-	public boolean connectSip() {
+	public boolean connectVoice() {
 		ClientOptions opt = new ClientOptions();
 		opt.setClientVersionToUse(Utils.fromHex("00000000"));
 		opt.setHost(getJoinService().getServerUrl().toLowerCase().replace("http://", ""));
-		opt.setAppName("sip/" + getJoinService().getJoinedMeeting().getConference());
+		opt.setAppName("sip");
 		log.debug(opt.toString());
 
-		voiceConnection = new VoiceConnection(opt, this);
+		voiceConnection = new VoiceConnection(opt, this) {
+			@Override
+			protected void onAudio(Audio audio) {
+				for (OnAudioListener listener : audioListeners)
+					listener.onAudio(audio);
+			}
+		};
 		return voiceConnection.connect();
 	}
 
@@ -261,6 +267,9 @@ public class BigBlueButtonClient {
 		public void onChangeIsMuted(IListener p);
 		public void onChangeIsTalking(IListener p);
 	}
+	public interface OnAudioListener extends IBbbListener {
+		public void onAudio(Audio audio);
+	}
 	
 	private Set<OnPublicChatMessageListener> publicChatMessageListeners = new LinkedHashSet<OnPublicChatMessageListener>();
 	private Set<OnPrivateChatMessageListener> privateChatMessageListeners = new LinkedHashSet<OnPrivateChatMessageListener>();
@@ -274,6 +283,7 @@ public class BigBlueButtonClient {
 	private Set<OnListenerJoinedListener> listenerJoinedListeners = new LinkedHashSet<OnListenerJoinedListener>();
 	private Set<OnListenerLeftListener> listenerLeftListeners = new LinkedHashSet<OnListenerLeftListener>();
 	private Set<OnListenerStatusChangeListener> listenerStatusChangeListeners = new LinkedHashSet<OnListenerStatusChangeListener>();
+	private Set<OnAudioListener> audioListeners = new LinkedHashSet<OnAudioListener>();
 	
 	public boolean addPublicChatMessageListener(OnPublicChatMessageListener listener) { return publicChatMessageListeners.add(listener); }
 	public boolean removePublicChatMessageListener(OnPublicChatMessageListener listener) { return publicChatMessageListeners.remove(listener); }
@@ -322,5 +332,9 @@ public class BigBlueButtonClient {
 	public boolean addListenerStatusChangeListener(OnListenerStatusChangeListener listener) { return listenerStatusChangeListeners.add(listener); }
 	public boolean removeListenerStatusChangeListener(OnListenerStatusChangeListener listener) { return listenerStatusChangeListeners.remove(listener); }
 	public Set<OnListenerStatusChangeListener> getListenerStatusChangeListeners() { return listenerStatusChangeListeners; }
+
+	public boolean addAudioListener(OnAudioListener listener) { return audioListeners.add(listener); }
+	public boolean removeAudioListener(OnAudioListener listener) { return audioListeners.remove(listener); }
+	public Set<OnAudioListener> getAudioListeners() { return audioListeners; }
 
 }

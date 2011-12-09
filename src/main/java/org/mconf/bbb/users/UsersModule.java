@@ -189,14 +189,14 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	public void onParticipantJoined(Participant p) {
-		for (OnParticipantJoinedListener l : handler.getContext().getParticipantJoinedListeners())
-			l.onParticipantJoined(p);
 		log.info("new participant: {}", p.toString());
-		participants.put(p.getUserId(), p);	
-		if(p.isModerator())
+		participants.put(p.getUserId(), p);
+		if (p.isModerator())
 			moderatorCount++;
 		else
 			participantCount++;
+		for (OnParticipantJoinedListener l : handler.getContext().getParticipantJoinedListeners())
+			l.onParticipantJoined(p);
 	}
 
 	private void onParticipantStatusChange(Participant p, String key,
