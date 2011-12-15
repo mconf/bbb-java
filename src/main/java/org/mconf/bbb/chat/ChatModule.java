@@ -24,7 +24,6 @@ package org.mconf.bbb.chat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,6 +33,7 @@ import org.mconf.bbb.Module;
 import org.mconf.bbb.MainRtmpConnection;
 import org.mconf.bbb.BigBlueButtonClient.OnPrivateChatMessageListener;
 import org.mconf.bbb.BigBlueButtonClient.OnPublicChatMessageListener;
+import org.mconf.bbb.api.JoinService0Dot7;
 import org.mconf.bbb.users.IParticipant;
 import org.red5.server.api.IAttributeStore;
 import org.red5.server.api.so.IClientSharedObject;
@@ -52,9 +52,19 @@ public class ChatModule extends Module implements ISharedObjectListener {
 
 	private List<ChatMessage> publicChatMessages = Collections.synchronizedList(new ArrayList<ChatMessage>());
 	private Map<Integer, List<ChatMessage>> privateChatMessages = new ConcurrentHashMap<Integer, List<ChatMessage>>();
+	
+	public final static int MESSAGE_ENCODING_UNKNOWN = -1;
+	public final static int MESSAGE_ENCODING_STRING = 0;
+	public final static int MESSAGE_ENCODING_TYPED_OBJECT = 1;
+	public static int MESSAGE_ENCODING = MESSAGE_ENCODING_UNKNOWN;
 
 	public ChatModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
+		
+		if (handler.getContext().getJoinService() instanceof JoinService0Dot7)
+			MESSAGE_ENCODING = MESSAGE_ENCODING_STRING;
+		else
+			MESSAGE_ENCODING = MESSAGE_ENCODING_TYPED_OBJECT;
 		
 		publicChatSO = handler.getSharedObject("chatSO", false);
 		publicChatSO.addSharedObjectListener(this);
@@ -93,7 +103,6 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		log.debug("onSharedObjectDisconnect");
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void onSharedObjectSend(ISharedObjectBase so, 
 			String method, List<?> params) {
@@ -102,17 +111,15 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		if (so.equals(publicChatSO)) {
 			if (method.equals("newChatMessage") && params != null) {
 				// example: [oi|Felipe|0|14:35|en|97]
-				String strParams = ((LinkedList<String>) params).get(0);
-				onPublicChatMessage(new ChatMessage(strParams));
+				onPublicChatMessage(new ChatMessage(params.get(0)));
 				return;
 			}
 		}
 		if (so.equals(privateChatSO)) {
 			if (method.equals("messageReceived") && params != null) {
 				// example: [97, oi|Felipe|0|14:35|en|97]
-				int userid = Integer.parseInt((String) ((LinkedList<String>) params).get(0));
-				String strParams = ((LinkedList<String>) params).get(1);
-				onPrivateChatMessage(new ChatMessage(strParams), handler.getContext().getUsersModule().getParticipants().get(userid));
+				int userid = Integer.parseInt((String) params.get(0));
+				onPrivateChatMessage(new ChatMessage(params.get(1)), handler.getContext().getUsersModule().getParticipants().get(userid));
 				return;
 			}
 		}
@@ -160,7 +167,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 			
 			List<Object> messages = (List<Object>) Arrays.asList((Object[]) command.getArg(0));
 			for (Object message : messages)
-				publicChatMessages.add(new ChatMessage((String) message));
+				publicChatMessages.add(new ChatMessage(message));
 			for (OnPublicChatMessageListener listener : handler.getContext().getPublicChatMessageListeners())
 				listener.onPublicChatMessage(publicChatMessages, handler.getContext().getUsersModule().getParticipants());
 			return true;

@@ -32,6 +32,7 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.mconf.bbb.BigBlueButtonClient;
@@ -41,13 +42,11 @@ import org.red5.server.so.SharedObjectMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.flazr.amf.Amf0Object;
 import com.flazr.rtmp.RtmpDecoder;
 import com.flazr.rtmp.RtmpEncoder;
 import com.flazr.rtmp.RtmpMessage;
 import com.flazr.rtmp.client.ClientHandshakeHandler;
 import com.flazr.rtmp.client.ClientOptions;
-import com.flazr.rtmp.message.AbstractMessage;
 import com.flazr.rtmp.message.Audio;
 import com.flazr.rtmp.message.BytesRead;
 import com.flazr.rtmp.message.Command;
@@ -56,7 +55,6 @@ import com.flazr.rtmp.message.Control;
 import com.flazr.rtmp.message.Metadata;
 import com.flazr.rtmp.message.SetPeerBw;
 import com.flazr.rtmp.message.WindowAckSize;
-import com.flazr.rtmp.server.ServerStream.PublishType;
 
 public abstract class VoiceConnection extends RtmpConnection {
 
@@ -94,28 +92,13 @@ public abstract class VoiceConnection extends RtmpConnection {
 
 	@Override
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-        Amf0Object object = AbstractMessage.object(
-                AbstractMessage.pair("app", options.getAppName()),
-                AbstractMessage.pair("flashVer", "LNX 11,1,102,55"),
-                AbstractMessage.pair("tcUrl", options.getTcUrl()),
-                AbstractMessage.pair("fpad", false),
-                AbstractMessage.pair("capabilities", 239.0),
-                AbstractMessage.pair("audioCodecs", 3575.0),
-                AbstractMessage.pair("videoCodecs", 252.0),
-                AbstractMessage.pair("videoFunction", 1.0),
-                AbstractMessage.pair("objectEncoding", 0.0)
-        );
-        log.debug(object.toString());
-        
         /*
          * https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/modules/phone/managers/ConnectionManager.as#L78
          * netConnection.connect(uri, externUID, username);
          */
         JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
-        Command connect = new CommandAmf0("connect", object, 
-    			meeting.getExternUserID(),
-        		context.getMyUserId() + "-" + meeting.getFullname());
-        
+		options.setArgs(meeting.getExternUserID(), context.getMyUserId() + "-" + meeting.getFullname());
+		Command connect = Command.connect(options);
         writeCommandExpectingResult(e.getChannel(), connect);
 	}
 	
@@ -201,18 +184,20 @@ public abstract class VoiceConnection extends RtmpConnection {
 	                	}
 	                	return;
                     } else if(resultFor.equals("createStream")) {
-                    	if (playStreamId == -1) {
-                    		playStreamId = ((Double) command.getArg(0)).intValue();
-                            log.debug("playStreamId to use: {}", streamId);
-                    		options.setStreamName(playName);
-							channel.write(Command.play(playStreamId, options));
-						  	channel.write(Control.setBuffer(streamId, 0));
+                        if (playStreamId == -1) {
+                            playStreamId = ((Double) command.getArg(0)).intValue();
+                            log.debug("playStreamId to use: {}", playStreamId);
+                            ClientOptions newOptions = new ClientOptions();
+                            newOptions.setStreamName(playName);
+                            channel.write(Command.play(playStreamId, newOptions));
+                            channel.write(Control.setBuffer(playStreamId, 0));
                     	} else if (publishStreamId == -1) {
-                    		publishStreamId = ((Double) command.getArg(0)).intValue();
-                            log.debug("publishStreamId to use: {}", streamId);
-                            options.setStreamName(publishName);
-                            options.setPublishType(PublishType.LIVE);
-                            channel.write(Command.publish(publishStreamId, options));
+                            publishStreamId = ((Double) command.getArg(0)).intValue();
+                            log.debug("publishStreamId to use: {}", publishStreamId);
+                            ClientOptions newOptions = new ClientOptions();
+                            newOptions.setStreamName(publishName);
+                            newOptions.publishLive();
+                            channel.write(Command.publish(publishStreamId, newOptions));
                     	}
 	                } else if (onCall(resultFor, command)) {
 	                	break;
@@ -295,4 +280,14 @@ public abstract class VoiceConnection extends RtmpConnection {
 	}
 	
 	abstract protected void onAudio(Audio audio);
+
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+		if (e.getCause().getMessage().equals("bad value / byte: 101 (hex: 65), java.lang.ArrayIndexOutOfBoundsException: 101")) {
+			log.debug("Ignoring malformed metadata");
+			return;
+		}
+
+		super.exceptionCaught(ctx, e);
+	}
 }

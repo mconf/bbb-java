@@ -81,9 +81,8 @@ public abstract class VideoReceiverConnection extends RtmpConnection {
 
 	@Override
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-        Command connect = Command.connect(options);
-
-        writeCommandExpectingResult(e.getChannel(), connect);
+        options.setArgs((Object[]) null);
+        writeCommandExpectingResult(e.getChannel(), Command.connect(options));
 	}
 	
 	@Override

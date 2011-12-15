@@ -115,17 +115,6 @@ public class MainRtmpConnection extends RtmpConnection {
 
 	@Override
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-        Amf0Object object = AbstractMessage.object(
-                AbstractMessage.pair("app", options.getAppName()),
-                AbstractMessage.pair("flashVer", "WIN 9,0,124,2"),
-                AbstractMessage.pair("tcUrl", options.getTcUrl()),
-                AbstractMessage.pair("fpad", false),
-                AbstractMessage.pair("audioCodecs", 1639.0),
-                AbstractMessage.pair("videoCodecs", 252.0),
-                AbstractMessage.pair("objectEncoding", 0.0),
-                AbstractMessage.pair("capabilities", 15.0),
-                AbstractMessage.pair("videoFunction", 1.0));
-
         /*
          * https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/main/model/users/NetConnectionDelegate.as#L102
          * _netConnection.connect(uri,
@@ -139,9 +128,9 @@ public class MainRtmpConnection extends RtmpConnection {
 		 */		
 			
         JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
-        Command connect = null;
-        if (context.getJoinService().getClass() == JoinService0Dot8.class) 
-        	connect = new CommandAmf0("connect", object, 
+        options.setArgs((Object[]) null);
+        if (context.getJoinService() instanceof JoinService0Dot8)
+            options.setArgs(
         		meeting.getFullname(), 
         		meeting.getRole(), 
         		meeting.getConference(), 
@@ -150,8 +139,8 @@ public class MainRtmpConnection extends RtmpConnection {
         		meeting.getVoicebridge(), 
         		meeting.getRecord().equals("true"), 
         		meeting.getExternUserID());
-        else if (context.getJoinService().getClass() == JoinService0Dot7.class)
-        	connect = new CommandAmf0("connect", object, 
+        else if (context.getJoinService() instanceof JoinService0Dot7)
+            options.setArgs(
         		meeting.getFullname(), 
         		meeting.getRole(), 
         		meeting.getConference(), 
@@ -161,7 +150,7 @@ public class MainRtmpConnection extends RtmpConnection {
         		meeting.getRecord().equals("true"), 
         		meeting.getExternUserID());
 
-        writeCommandExpectingResult(e.getChannel(), connect);
+        writeCommandExpectingResult(e.getChannel(), Command.connect(options));
 	}
 	
 	@Override

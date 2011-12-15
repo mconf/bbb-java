@@ -130,6 +130,7 @@ public class BigBlueButtonClient {
 		opt.setClientVersionToUse(Utils.fromHex("00000000"));
 		opt.setHost(getJoinService().getServerUrl().toLowerCase().replace("http://", ""));
 		opt.setAppName("sip");
+		opt.publishLive();
 		log.debug(opt.toString());
 
 		voiceConnection = new VoiceConnection(opt, this) {

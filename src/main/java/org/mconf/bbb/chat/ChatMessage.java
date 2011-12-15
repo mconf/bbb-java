@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import com.flazr.amf.Amf0Object;
+
 public class ChatMessage {
 	
 	/*
@@ -49,11 +51,26 @@ public class ChatMessage {
 		language = "en";
 	}
 	
-	public ChatMessage(String s) {
-		decode(s);
+	public ChatMessage(Object object) {
+		if (object instanceof String)
+			decode((String) object);
+		else if (object instanceof Amf0Object)
+			decode((Amf0Object) object);
 	}
 	
-	public void decode(String s) throws NumberFormatException {
+	// {message=hi, username=rapo, color=0, time=11:52, language=it, userid=4865, classname=org.bigbluebutton.conference.service.chat.ChatObject}]
+	private void decode(Amf0Object obj) {
+		message = (String) obj.get("message");
+		username = (String) obj.get("username");
+		color = (String) obj.get("color");
+		time = (String) obj.get("time");
+		language = (String) obj.get("language");
+		userid = Integer.parseInt((String) obj.get("userid"));
+
+		ChatModule.MESSAGE_ENCODING = ChatModule.MESSAGE_ENCODING_TYPED_OBJECT;
+	}
+	
+	private void decode(String s) throws NumberFormatException {
 		List<String> param = Arrays.asList(s.split("\\|"));
 		message = param.get(0);
 		username = param.get(1);
@@ -64,9 +81,31 @@ public class ChatMessage {
 		language = param.get(1);
 		time = param.get(2);
 		color = param.get(3);
+		
+		ChatModule.MESSAGE_ENCODING = ChatModule.MESSAGE_ENCODING_STRING;
 	}
 	
-	public String encode() {
+	public Object encode() {
+		switch (ChatModule.MESSAGE_ENCODING) {
+			case ChatModule.MESSAGE_ENCODING_STRING: return encodeString();
+			case ChatModule.MESSAGE_ENCODING_TYPED_OBJECT: return encodeTypedObject();
+			default: return encodeTypedObject();
+		}
+	}
+	
+	private Object encodeTypedObject() {
+		Amf0Object obj = new Amf0Object();
+		obj.put("message", message);
+		obj.put("username", username);
+		obj.put("color", color);
+		obj.put("time", time);
+		obj.put("language", language);
+		obj.put("userid", Integer.toString(userid));
+		obj.put("classname", "org.bigbluebutton.conference.service.chat.ChatObject");
+		return obj;
+	}
+	
+	private Object encodeString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(message)
 			.append("|")
