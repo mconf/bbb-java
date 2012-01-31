@@ -34,7 +34,6 @@ import org.mconf.bbb.chat.ChatMessage;
 import org.mconf.bbb.chat.ChatModule;
 import org.mconf.bbb.listeners.IListener;
 import org.mconf.bbb.listeners.ListenersModule;
-import org.mconf.bbb.phone.VoiceConnection;
 import org.mconf.bbb.users.IParticipant;
 import org.mconf.bbb.users.Participant;
 import org.mconf.bbb.users.UsersModule;
@@ -51,7 +50,6 @@ public class BigBlueButtonClient {
 	private static final Logger log = LoggerFactory.getLogger(BigBlueButtonClient.class);
 
 	private MainRtmpConnection mainConnection = null;
-	private VoiceConnection voiceConnection = null;
 
 	private JoinServiceProxy joinServiceProxy = new JoinServiceProxy();
 
@@ -123,24 +121,6 @@ public class BigBlueButtonClient {
 
 		mainConnection = new MainRtmpConnection(opt, this);
 		return mainConnection.connect();
-	}
-
-	public boolean connectVoice() {
-		ClientOptions opt = new ClientOptions();
-		opt.setClientVersionToUse(Utils.fromHex("00000000"));
-		opt.setHost(getJoinService().getServerUrl().toLowerCase().replace("http://", ""));
-		opt.setAppName("sip");
-		opt.publishLive();
-		log.debug(opt.toString());
-
-		voiceConnection = new VoiceConnection(opt, this) {
-			@Override
-			protected void onAudio(Audio audio) {
-				for (OnAudioListener listener : audioListeners)
-					listener.onAudio(audio);
-			}
-		};
-		return voiceConnection.connect();
 	}
 
 	public void disconnect() {

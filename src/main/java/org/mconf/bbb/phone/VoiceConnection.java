@@ -27,6 +27,8 @@ import java.util.concurrent.Executor;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -42,13 +44,17 @@ import org.red5.server.so.SharedObjectMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.flazr.rtmp.LoopedReader;
 import com.flazr.rtmp.RtmpDecoder;
 import com.flazr.rtmp.RtmpEncoder;
 import com.flazr.rtmp.RtmpMessage;
+import com.flazr.rtmp.RtmpPublisher;
+import com.flazr.rtmp.RtmpReader;
 import com.flazr.rtmp.client.ClientHandshakeHandler;
 import com.flazr.rtmp.client.ClientOptions;
 import com.flazr.rtmp.message.Audio;
 import com.flazr.rtmp.message.BytesRead;
+import com.flazr.rtmp.message.ChunkSize;
 import com.flazr.rtmp.message.Command;
 import com.flazr.rtmp.message.CommandAmf0;
 import com.flazr.rtmp.message.Control;
@@ -58,14 +64,14 @@ import com.flazr.rtmp.message.WindowAckSize;
 
 public abstract class VoiceConnection extends RtmpConnection {
 
-    private static final Logger log = LoggerFactory.getLogger(VoiceConnection.class);
+	private static final Logger log = LoggerFactory.getLogger(VoiceConnection.class);
 	private String publishName;
 	private String playName;
 	@SuppressWarnings("unused")
 	private String codec;
 	private int playStreamId = -1;
 	private int publishStreamId = -1;
-    
+
 	public VoiceConnection(ClientOptions options, BigBlueButtonClient context) {
 		super(options, context);
 	}
@@ -116,7 +122,7 @@ public abstract class VoiceConnection extends RtmpConnection {
     
     // netConnection.call("voiceconf.call", null, "default", username, dialStr);
     public void call(Channel channel) {
-    	Command command = new CommandAmf0("voiceconf.call", null, 
+    	Command command = new CommandAmf0("voiceconf.call", null,
     			"default",
     			context.getJoinService().getJoinedMeeting().getFullname(), 
     			context.getJoinService().getJoinedMeeting().getWebvoiceconf());
@@ -140,6 +146,11 @@ public abstract class VoiceConnection extends RtmpConnection {
     
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) {
+		// TODO: call it even in the receiver thread?
+		if (publisher != null && publisher.handle(me)) {
+			return;
+		}
+
         final Channel channel = me.getChannel();
         final RtmpMessage message = (RtmpMessage) me.getMessage();
         switch(message.getHeader().getMessageType()) {
@@ -163,7 +174,7 @@ public abstract class VoiceConnection extends RtmpConnection {
 
             case COMMAND_AMF0:
 	        case COMMAND_AMF3:
-	            Command command = (Command) message;                
+	            Command command = (Command) message;
 	            String name = command.getName();
 	            log.debug("server command: {}", name);
 	            if(name.equals("_result")) {
@@ -184,6 +195,7 @@ public abstract class VoiceConnection extends RtmpConnection {
 	                	}
 	                	return;
                     } else if(resultFor.equals("createStream")) {
+
                         if (playStreamId == -1) {
                             playStreamId = ((Double) command.getArg(0)).intValue();
                             log.debug("playStreamId to use: {}", playStreamId);
@@ -191,23 +203,77 @@ public abstract class VoiceConnection extends RtmpConnection {
                             newOptions.setStreamName(playName);
                             channel.write(Command.play(playStreamId, newOptions));
                             channel.write(Control.setBuffer(playStreamId, 0));
-                    	} else if (publishStreamId == -1) {
+                            return;
+
+                    	} else if (publishStreamId == -1 && isPublishEnabled()) {
                             publishStreamId = ((Double) command.getArg(0)).intValue();
                             log.debug("publishStreamId to use: {}", publishStreamId);
+
+                            RtmpReader reader;
+                            if(options.getFileToPublish() != null) {
+                                reader = RtmpPublisher.getReader(options.getFileToPublish());
+                            } else {
+                                reader = options.getReaderToPublish();
+                            }
+                            if(options.getLoop() > 1) {
+                                reader = new LoopedReader(reader, options.getLoop());
+                            }
+                            publisher = new RtmpPublisher(reader, publishStreamId, options.getBuffer(), true, false) {
+                                @Override protected RtmpMessage[] getStopMessages(long timePosition) {
+                                    return new RtmpMessage[]{Command.unpublish(publishStreamId)};
+                                }
+                            };
+
                             ClientOptions newOptions = new ClientOptions();
                             newOptions.setStreamName(publishName);
                             newOptions.publishLive();
+                            newOptions.setLoop(options.getLoop());
+                            newOptions.setReaderToPublish(options.getReaderToPublish());
                             channel.write(Command.publish(publishStreamId, newOptions));
+                            return;
                     	}
-	                } else if (onCall(resultFor, command)) {
+
+                    } else if (onCall(resultFor, command)) {
 	                	break;
 	                } else {
 	                	log.info("ignoring result: {}", message);
 	                }
+
+	            } else if(name.equals("onStatus")) {
+                    @SuppressWarnings("unchecked")
+                    final Map<String, Object> temp = (Map<String, Object>) command.getArg(0);
+                    final String code = (String) temp.get("code");
+                    log.debug("onStatus code: {}", code);
+
+                    if (code.equals("NetStream.Failed")
+                            || code.equals("NetStream.Play.Failed")
+                            || code.equals("NetStream.Play.Stop")
+                            || code.equals("NetStream.Play.StreamNotFound")) {
+                        log.debug("disconnecting, code: {}, bytes read: {}", code, bytesRead);
+                        channel.close();
+                        return;
+                    }
+                    if (isPublishEnabled()) {
+                    	if(code.equals("NetStream.Publish.Start")
+                    			&& publisher != null && !publisher.isStarted()) {
+                    		log.debug("starting the publisher after NetStream.Publish.Start");
+                    		publisher.start(channel, options.getStart(), options.getLength(), new ChunkSize(4096));
+                    		return;
+                    	}
+                    	if (publisher != null && code.equals("NetStream.Unpublish.Success")) {
+                    		log.debug("unpublish success, closing channel");
+                    		ChannelFuture future = channel.write(Command.closeStream(publishStreamId));
+                    		future.addListener(ChannelFutureListener.CLOSE);
+                    		return;
+                    	}
+                    }
+
 	            } else if (name.equals("successfullyJoinedVoiceConferenceCallback")) {
 	            	onSuccessfullyJoined(command);
 	            	writeCommandExpectingResult(channel, Command.createStream());
-	            	writeCommandExpectingResult(channel, Command.createStream());
+	            	if (isPublishEnabled()) {
+	            		writeCommandExpectingResult(channel, Command.createStream());
+	            	}
 	            } else if (name.equals("disconnectedFromJoinVoiceConferenceCallback")) {
 	            	onDisconnectedFromJoin(command);
 	            	channel.close();
@@ -247,9 +313,12 @@ public abstract class VoiceConnection extends RtmpConnection {
         }
 	}
 	
+	private boolean isPublishEnabled() {
+		return options.getReaderToPublish() != null;
+	}
+
 	private void onFailedToJoin(Command command) {
 		// TODO Auto-generated method stub
-		
 	}
 
 	/*
