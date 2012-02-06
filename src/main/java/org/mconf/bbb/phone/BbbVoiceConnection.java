@@ -22,7 +22,6 @@
 package org.mconf.bbb.phone;
 
 import org.mconf.bbb.BigBlueButtonClient;
-import org.mconf.bbb.BigBlueButtonClient.OnAudioListener;
 import org.mconf.bbb.phone.VoiceConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,10 +32,12 @@ import com.flazr.rtmp.message.Audio;
 import com.flazr.util.Utils;
 
 public class BbbVoiceConnection extends VoiceConnection {
+	//private FlvWriter writer; // to record the received audio to a flv file
 	private static final Logger log = LoggerFactory.getLogger(BbbVoiceConnection.class);
 
 	public BbbVoiceConnection(BigBlueButtonClient context, RtmpReader reader) {
 		super(null, context);
+		//writer = new FlvWriter("received.flv");
 
 		options = new ClientOptions();
 		options.setClientVersionToUse(Utils.fromHex("00000000"));
@@ -62,6 +63,7 @@ public class BbbVoiceConnection extends VoiceConnection {
 	
 	@Override
 	protected void onAudio(Audio audio) {
+		//writer.write(audio);
 		log.debug("received audio package: {}", audio.getHeader().getTime());
 	}
 }

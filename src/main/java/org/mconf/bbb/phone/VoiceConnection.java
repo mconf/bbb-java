@@ -205,30 +205,33 @@ public abstract class VoiceConnection extends RtmpConnection {
                             channel.write(Control.setBuffer(playStreamId, 0));
                             return;
 
-                    	} else if (publishStreamId == -1 && isPublishEnabled()) {
+                    	} else if (publishStreamId == -1) {
                             publishStreamId = ((Double) command.getArg(0)).intValue();
                             log.debug("publishStreamId to use: {}", publishStreamId);
-
-                            RtmpReader reader;
-                            if(options.getFileToPublish() != null) {
-                                reader = RtmpPublisher.getReader(options.getFileToPublish());
-                            } else {
-                                reader = options.getReaderToPublish();
-                            }
-                            if(options.getLoop() > 1) {
-                                reader = new LoopedReader(reader, options.getLoop());
-                            }
-                            publisher = new RtmpPublisher(reader, publishStreamId, options.getBuffer(), true, false) {
-                                @Override protected RtmpMessage[] getStopMessages(long timePosition) {
-                                    return new RtmpMessage[]{Command.unpublish(publishStreamId)};
-                                }
-                            };
 
                             ClientOptions newOptions = new ClientOptions();
                             newOptions.setStreamName(publishName);
                             newOptions.publishLive();
-                            newOptions.setLoop(options.getLoop());
-                            newOptions.setReaderToPublish(options.getReaderToPublish());
+
+                            if (isPublishEnabled()) {
+                                RtmpReader reader;
+                                if(options.getFileToPublish() != null) {
+                                    reader = RtmpPublisher.getReader(options.getFileToPublish());
+                                } else {
+                                    reader = options.getReaderToPublish();
+                                }
+                                if(options.getLoop() > 1) {
+                                    reader = new LoopedReader(reader, options.getLoop());
+                                }
+                                publisher = new RtmpPublisher(reader, publishStreamId, options.getBuffer(), true, false) {
+                                    @Override protected RtmpMessage[] getStopMessages(long timePosition) {
+                                        return new RtmpMessage[]{Command.unpublish(publishStreamId)};
+                                    }
+                                };
+                                newOptions.setLoop(options.getLoop());
+                                newOptions.setReaderToPublish(options.getReaderToPublish());
+                            }
+
                             channel.write(Command.publish(publishStreamId, newOptions));
                             return;
                     	}
@@ -271,9 +274,7 @@ public abstract class VoiceConnection extends RtmpConnection {
 	            } else if (name.equals("successfullyJoinedVoiceConferenceCallback")) {
 	            	onSuccessfullyJoined(command);
 	            	writeCommandExpectingResult(channel, Command.createStream());
-	            	if (isPublishEnabled()) {
-	            		writeCommandExpectingResult(channel, Command.createStream());
-	            	}
+	            	writeCommandExpectingResult(channel, Command.createStream());
 	            } else if (name.equals("disconnectedFromJoinVoiceConferenceCallback")) {
 	            	onDisconnectedFromJoin(command);
 	            	channel.close();
@@ -296,13 +297,13 @@ public abstract class VoiceConnection extends RtmpConnection {
 	        	onSharedObject(channel, (SharedObjectMessage) message);
 	        	break;
             case WINDOW_ACK_SIZE:
-                WindowAckSize was = (WindowAckSize) message;                
+                WindowAckSize was = (WindowAckSize) message;
                 if(was.getValue() != bytesReadWindow) {
                     channel.write(SetPeerBw.dynamic(bytesReadWindow));
-                }                
+                }
                 break;
             case SET_PEER_BW:
-                SetPeerBw spb = (SetPeerBw) message;                
+                SetPeerBw spb = (SetPeerBw) message;
                 if(spb.getValue() != bytesWrittenWindow) {
                     channel.write(new WindowAckSize(bytesWrittenWindow));
                 }
