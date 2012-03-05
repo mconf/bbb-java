@@ -27,20 +27,15 @@ import java.util.concurrent.Executor;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.mconf.bbb.BigBlueButtonClient;
 import org.mconf.bbb.RtmpConnection;
 import org.mconf.bbb.api.JoinedMeeting;
-import org.red5.server.so.SharedObjectMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,14 +48,10 @@ import com.flazr.rtmp.RtmpReader;
 import com.flazr.rtmp.client.ClientHandshakeHandler;
 import com.flazr.rtmp.client.ClientOptions;
 import com.flazr.rtmp.message.Audio;
-import com.flazr.rtmp.message.BytesRead;
-import com.flazr.rtmp.message.ChunkSize;
 import com.flazr.rtmp.message.Command;
 import com.flazr.rtmp.message.CommandAmf0;
 import com.flazr.rtmp.message.Control;
-import com.flazr.rtmp.message.Metadata;
-import com.flazr.rtmp.message.SetPeerBw;
-import com.flazr.rtmp.message.WindowAckSize;
+import com.flazr.rtmp.message.MessageType;
 
 public abstract class VoiceConnection extends RtmpConnection {
 
@@ -130,7 +121,7 @@ public abstract class VoiceConnection extends RtmpConnection {
     }
     
 	// https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/modules/phone/managers/ConnectionManager.as#L149
-    public boolean onCall(String resultFor, Command command) {
+    protected boolean onCall(String resultFor, Command command) {
     	if (resultFor.equals("voiceconf.call")) {
     		log.debug(command.toString());
     		return true;
@@ -144,176 +135,93 @@ public abstract class VoiceConnection extends RtmpConnection {
     	writeCommandExpectingResult(channel, command);
     }
     
-	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) {
-		// TODO: call it even in the receiver thread?
-		if (publisher != null && publisher.handle(me)) {
-			return;
-		}
+    @Override
+    protected void onMultimedia(Channel channel, RtmpMessage message) {
+    	// TODO Auto-generated method stub
+    	super.onMultimedia(channel, message);
+    	if (message.getHeader().getMessageType() == MessageType.AUDIO) {
+    		onAudio((Audio) message);
+    	}
+    }
+    
+    @Override
+    protected void onCommandResult(Channel channel, Command command,
+    		String resultFor) {
+        log.info("result for method call: {}", resultFor);
+        if(resultFor.equals("connect")) {
+        	String code = connectGetCode(command);
+        	if (code.equals("NetConnection.Connect.Success")) {
+        		call(channel);
+        	} else {
+        		log.error("method connect result in {}, quitting", code);
+        		log.debug("connect response: {}", command.toString());
+        		channel.close();
+        	}
+        	return;
+        } else if(resultFor.equals("createStream")) {
 
-        final Channel channel = me.getChannel();
-        final RtmpMessage message = (RtmpMessage) me.getMessage();
-        switch(message.getHeader().getMessageType()) {
-        	case CONTROL:
-                Control control = (Control) message;
-                switch(control.getType()) {
-                    case PING_REQUEST:
-                        final int time = control.getTime();
-                        Control pong = Control.pingResponse(time);
-                        channel.write(pong);
-                        break;
-                }
-        		break;
-        	
-            case METADATA_AMF0:
-            case METADATA_AMF3:
-                Metadata metadata = (Metadata) message;
-                if(!metadata.getName().equals("onMetaData"))
-                	log.debug("ignoring metadata: {}", metadata);
-                break;
+            if (playStreamId == -1) {
+                playStreamId = ((Double) command.getArg(0)).intValue();
+                log.debug("playStreamId to use: {}", playStreamId);
+                ClientOptions newOptions = new ClientOptions();
+                newOptions.setStreamName(playName);
+                channel.write(Command.play(playStreamId, newOptions));
+                channel.write(Control.setBuffer(playStreamId, 0));
+                return;
 
-            case COMMAND_AMF0:
-	        case COMMAND_AMF3:
-	            Command command = (Command) message;
-	            String name = command.getName();
-	            log.debug("server command: {}", name);
-	            if(name.equals("_result")) {
-	                String resultFor = transactionToCommandMap.get(command.getTransactionId());
-	                if (resultFor == null) {
-	                	log.warn("result for method without tracked transaction");
-	                	break;
-	                }
-	                log.info("result for method call: {}", resultFor);
-	                if(resultFor.equals("connect")) {
-	                	String code = connectGetCode(command);
-	                	if (code.equals("NetConnection.Connect.Success")) {
-	                		call(channel);
-	                	} else {
-	                		log.error("method connect result in {}, quitting", code);
-	                		log.debug("connect response: {}", command.toString());
-	                		channel.close();
-	                	}
-	                	return;
-                    } else if(resultFor.equals("createStream")) {
+        	} else if (publishStreamId == -1) {
+                publishStreamId = ((Double) command.getArg(0)).intValue();
+                log.debug("publishStreamId to use: {}", publishStreamId);
 
-                        if (playStreamId == -1) {
-                            playStreamId = ((Double) command.getArg(0)).intValue();
-                            log.debug("playStreamId to use: {}", playStreamId);
-                            ClientOptions newOptions = new ClientOptions();
-                            newOptions.setStreamName(playName);
-                            channel.write(Command.play(playStreamId, newOptions));
-                            channel.write(Control.setBuffer(playStreamId, 0));
-                            return;
+                ClientOptions newOptions = new ClientOptions();
+                newOptions.setStreamName(publishName);
+                newOptions.publishLive();
 
-                    	} else if (publishStreamId == -1) {
-                            publishStreamId = ((Double) command.getArg(0)).intValue();
-                            log.debug("publishStreamId to use: {}", publishStreamId);
-
-                            ClientOptions newOptions = new ClientOptions();
-                            newOptions.setStreamName(publishName);
-                            newOptions.publishLive();
-
-                            if (isPublishEnabled()) {
-                                RtmpReader reader;
-                                if(options.getFileToPublish() != null) {
-                                    reader = RtmpPublisher.getReader(options.getFileToPublish());
-                                } else {
-                                    reader = options.getReaderToPublish();
-                                }
-                                if(options.getLoop() > 1) {
-                                    reader = new LoopedReader(reader, options.getLoop());
-                                }
-                                publisher = new RtmpPublisher(reader, publishStreamId, options.getBuffer(), true, false) {
-                                    @Override protected RtmpMessage[] getStopMessages(long timePosition) {
-                                        return new RtmpMessage[]{Command.unpublish(publishStreamId)};
-                                    }
-                                };
-                                newOptions.setLoop(options.getLoop());
-                                newOptions.setReaderToPublish(options.getReaderToPublish());
-                            }
-
-                            channel.write(Command.publish(publishStreamId, newOptions));
-                            return;
-                    	}
-
-                    } else if (onCall(resultFor, command)) {
-	                	break;
-	                } else {
-	                	log.info("ignoring result: {}", message);
-	                }
-
-	            } else if(name.equals("onStatus")) {
-                    @SuppressWarnings("unchecked")
-                    final Map<String, Object> temp = (Map<String, Object>) command.getArg(0);
-                    final String code = (String) temp.get("code");
-                    log.debug("onStatus code: {}", code);
-
-                    if (code.equals("NetStream.Failed")
-                            || code.equals("NetStream.Play.Failed")
-                            || code.equals("NetStream.Play.Stop")
-                            || code.equals("NetStream.Play.StreamNotFound")) {
-                        log.debug("disconnecting, code: {}, bytes read: {}", code, bytesRead);
-                        channel.close();
-                        return;
+                if (isPublishEnabled()) {
+                    RtmpReader reader;
+                    if(options.getFileToPublish() != null) {
+                        reader = RtmpPublisher.getReader(options.getFileToPublish());
+                    } else {
+                        reader = options.getReaderToPublish();
                     }
-                    if (isPublishEnabled()) {
-                    	if(code.equals("NetStream.Publish.Start")
-                    			&& publisher != null && !publisher.isStarted()) {
-                    		log.debug("starting the publisher after NetStream.Publish.Start");
-                    		publisher.start(channel, options.getStart(), options.getLength(), new ChunkSize(4096));
-                    		return;
-                    	}
-                    	if (publisher != null && code.equals("NetStream.Unpublish.Success")) {
-                    		log.debug("unpublish success, closing channel");
-                    		ChannelFuture future = channel.write(Command.closeStream(publishStreamId));
-                    		future.addListener(ChannelFutureListener.CLOSE);
-                    		return;
-                    	}
+                    if(options.getLoop() > 1) {
+                        reader = new LoopedReader(reader, options.getLoop());
                     }
+                    publisher = new RtmpPublisher(reader, publishStreamId, options.getBuffer(), true, false) {
+                        @Override protected RtmpMessage[] getStopMessages(long timePosition) {
+                            return new RtmpMessage[]{Command.unpublish(publishStreamId)};
+                        }
+                    };
+                    newOptions.setLoop(options.getLoop());
+                    newOptions.setReaderToPublish(options.getReaderToPublish());
+                }
 
-	            } else if (name.equals("successfullyJoinedVoiceConferenceCallback")) {
-	            	onSuccessfullyJoined(command);
-	            	writeCommandExpectingResult(channel, Command.createStream());
-	            	writeCommandExpectingResult(channel, Command.createStream());
-	            } else if (name.equals("disconnectedFromJoinVoiceConferenceCallback")) {
-	            	onDisconnectedFromJoin(command);
-	            	channel.close();
-	            } else if (name.equals("failedToJoinVoiceConferenceCallback")) {
-	            	onFailedToJoin(command);
-	            	channel.close();
-	            }
-	            break;
-	        case AUDIO:
-                bytesRead += message.getHeader().getSize();
-                if((bytesRead - bytesReadLastSent) > bytesReadWindow) {
-                    logger.debug("sending bytes read ack {}", bytesRead);
-                    bytesReadLastSent = bytesRead;
-                    channel.write(new BytesRead(bytesRead));
-                }
-                onAudio((Audio) message);
-	        	break;
-	        case SHARED_OBJECT_AMF0:
-	        case SHARED_OBJECT_AMF3:
-	        	onSharedObject(channel, (SharedObjectMessage) message);
-	        	break;
-            case WINDOW_ACK_SIZE:
-                WindowAckSize was = (WindowAckSize) message;
-                if(was.getValue() != bytesReadWindow) {
-                    channel.write(SetPeerBw.dynamic(bytesReadWindow));
-                }
-                break;
-            case SET_PEER_BW:
-                SetPeerBw spb = (SetPeerBw) message;
-                if(spb.getValue() != bytesWrittenWindow) {
-                    channel.write(new WindowAckSize(bytesWrittenWindow));
-                }
-                break;
-    		default:
-    			log.info("ignoring rtmp message: {}", message);
-	        	break;
+                channel.write(Command.publish(publishStreamId, newOptions));
+                return;
+        	}
+
+        } else if (onCall(resultFor, command)) {
+        	return;
+        } else {
+        	log.info("ignoring result: {}", command);
         }
-	}
-	
+    }
+    
+    @Override
+    protected void onCommandCustom(Channel channel, Command command, String name) {
+    	if (name.equals("successfullyJoinedVoiceConferenceCallback")) {
+        	onSuccessfullyJoined(command);
+        	writeCommandExpectingResult(channel, Command.createStream());
+        	writeCommandExpectingResult(channel, Command.createStream());
+        } else if (name.equals("disconnectedFromJoinVoiceConferenceCallback")) {
+        	onDisconnectedFromJoin(command);
+        	channel.close();
+        } else if (name.equals("failedToJoinVoiceConferenceCallback")) {
+        	onFailedToJoin(command);
+        	channel.close();
+        }
+    }
+    
 	private boolean isPublishEnabled() {
 		return options.getReaderToPublish() != null;
 	}
@@ -351,13 +259,4 @@ public abstract class VoiceConnection extends RtmpConnection {
 	
 	abstract protected void onAudio(Audio audio);
 
-	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-		if (e.getCause().getMessage().equals("bad value / byte: 101 (hex: 65), java.lang.ArrayIndexOutOfBoundsException: 101")) {
-			log.debug("Ignoring malformed metadata");
-			return;
-		}
-
-		super.exceptionCaught(ctx, e);
-	}
 }

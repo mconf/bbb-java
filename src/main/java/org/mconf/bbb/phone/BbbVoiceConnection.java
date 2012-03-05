@@ -63,7 +63,6 @@ public class BbbVoiceConnection extends VoiceConnection {
 	
 	@Override
 	protected void onAudio(Audio audio) {
-		//writer.write(audio);
 		log.debug("received audio package: {}", audio.getHeader().getTime());
 	}
 }

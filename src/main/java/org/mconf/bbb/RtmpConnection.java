@@ -19,7 +19,6 @@ import com.flazr.rtmp.client.ClientOptions;
 
 public abstract class RtmpConnection extends ClientHandler implements ChannelFutureListener {
 
-	@SuppressWarnings("unused")
 	private static final Logger log = LoggerFactory.getLogger(RtmpConnection.class);
 
 	final protected BigBlueButtonClient context;
@@ -50,14 +49,6 @@ public abstract class RtmpConnection extends ClientHandler implements ChannelFut
 	abstract protected ClientBootstrap getBootstrap(final Executor executor);
 	
 	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-		super.exceptionCaught(ctx, e);
-
-		for (OnExceptionListener listener : context.getExceptionListeners())
-			listener.onException(e.getCause());
-	}
-
-	@Override
 	public void operationComplete(ChannelFuture future) throws Exception {
 		if (!future.isSuccess())
 			for (OnConnectedListener listener : context.getConnectedListeners()) {
@@ -69,4 +60,17 @@ public abstract class RtmpConnection extends ClientHandler implements ChannelFut
 		return context;
 	}
 	
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+		String exceptionMessage = e.getCause().getMessage();
+		if (exceptionMessage.contains("ArrayIndexOutOfBoundsException") && exceptionMessage.contains("bad value / byte: 101 (hex: 65)")) {
+			log.debug("Ignoring malformed metadata");
+			return;
+		} else {
+			super.exceptionCaught(ctx, e);
+	
+			for (OnExceptionListener listener : context.getExceptionListeners())
+				listener.onException(e.getCause());
+		}
+	}	
 }

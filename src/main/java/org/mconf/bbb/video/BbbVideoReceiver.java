@@ -30,7 +30,7 @@ import com.flazr.rtmp.client.ClientOptions;
 import com.flazr.rtmp.message.Video;
 import com.flazr.util.Utils;
 
-public abstract class BbbVideoReceiver {
+public class BbbVideoReceiver {
 
 	protected class VideoConnection extends VideoReceiverConnection {
 
@@ -73,12 +73,15 @@ public abstract class BbbVideoReceiver {
 			return;
 		}
 		
+		opt.setWriterToSave(null);
 		opt.setStreamName(streamName);
 		
 		videoConnection = new VideoConnection(opt, context);
 	}
 	
-	abstract protected void onVideo(Video video);
+	protected void onVideo(Video video) {
+		log.debug("received video package: {}", video.getHeader().getTime());
+	}
 	
 	public void start() {
 		if (videoConnection != null)
