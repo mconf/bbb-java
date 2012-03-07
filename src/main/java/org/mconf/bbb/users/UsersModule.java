@@ -27,9 +27,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.netty.channel.Channel;
-import org.mconf.bbb.IBigBlueButtonClientListener;
 import org.mconf.bbb.MainRtmpConnection;
 import org.mconf.bbb.Module;
+import org.mconf.bbb.BigBlueButtonClient.OnKickUserListener;
+import org.mconf.bbb.BigBlueButtonClient.OnParticipantJoinedListener;
+import org.mconf.bbb.BigBlueButtonClient.OnParticipantLeftListener;
+import org.mconf.bbb.BigBlueButtonClient.OnParticipantStatusChangeListener;
 import org.mconf.bbb.api.JoinService0Dot7;
 import org.mconf.bbb.api.JoinService0Dot8;
 import org.mconf.bbb.api.JoinServiceBase;
@@ -91,20 +94,20 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 		if (so.equals(participantsSO)) {
 			if (method.equals("kickUserCallback")) {
-				int userId = ((Double) params.get(0)).intValue();
-				if (userId == handler.getContext().getMyUserId()) {
-					// \TODO the kickUserCallback should be handled with the userId as parameter
-					for (IBigBlueButtonClientListener l : handler.getContext().getListeners())
-						l.onKickUserCallback();
+				IParticipant p = participants.get(((Double) params.get(0)).intValue());
+				if (p.getUserId() == handler.getContext().getMyUserId()) {
+					for (OnKickUserListener l : handler.getContext().getKickUserListeners())
+						l.onKickMyself();
 					channel.close();
-				}
+				} else
+					for (OnKickUserListener l : handler.getContext().getKickUserListeners())
+						l.onKickUser(p);
 				return;
 			}
 			if (method.equals("participantLeft")) {
 				IParticipant p = participants.get(((Double) params.get(0)).intValue());
-				for (IBigBlueButtonClientListener l : handler.getContext().getListeners()) {
+				for (OnParticipantLeftListener l : handler.getContext().getParticipantLeftListeners())
 					l.onParticipantLeft(p);
-				}
 
 				if(p.getRole().equals("MODERATOR"))
 					moderatorCount--;
@@ -186,15 +189,14 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	public void onParticipantJoined(Participant p) {
-		for (IBigBlueButtonClientListener l : handler.getContext().getListeners()) {
-			l.onParticipantJoined(p);
-		}				
 		log.info("new participant: {}", p.toString());
-		participants.put(p.getUserId(), p);	
-		if(p.isModerator())
+		participants.put(p.getUserId(), p);
+		if (p.isModerator())
 			moderatorCount++;
 		else
 			participantCount++;
+		for (OnParticipantJoinedListener l : handler.getContext().getParticipantJoinedListeners())
+			l.onParticipantJoined(p);
 	}
 
 	private void onParticipantStatusChange(Participant p, String key,
@@ -202,21 +204,18 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		log.debug("participantStatusChange: " + p.getName() + " status: " + key + " value: " + value.toString());
 		if (key.equals("presenter")) {
 			p.getStatus().setPresenter((Boolean) value);
-			for (IBigBlueButtonClientListener l : handler.getContext().getListeners()) {
-				l.onParticipantStatusChangePresenter(p);
-			}
+			for (OnParticipantStatusChangeListener l : handler.getContext().getParticipantStatusChangeListeners())
+				l.onChangePresenter(p);
 		} else if (key.equals("hasStream")) {
 			p.getStatus().setHasStream(value);
-			for (IBigBlueButtonClientListener l : handler.getContext().getListeners()) {
-				l.onParticipantStatusChangeHasStream(p);
-			}
+			for (OnParticipantStatusChangeListener l : handler.getContext().getParticipantStatusChangeListeners())
+				l.onChangeHasStream(p);
 		} else if (key.equals("streamName")) {
 			p.getStatus().setStreamName((String) value);
 		} else if (key.equals("raiseHand")) {
 			p.getStatus().setRaiseHand((Boolean) value);
-			for (IBigBlueButtonClientListener l : handler.getContext().getListeners()) {
-				l.onParticipantStatusChangeRaiseHand(p);
-			}
+			for (OnParticipantStatusChangeListener l : handler.getContext().getParticipantStatusChangeListeners())
+				l.onChangeRaiseHand(p);
 		}
 	}
 

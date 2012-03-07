@@ -24,6 +24,7 @@ package org.mconf.bbb;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jboss.netty.channel.Channel;
@@ -31,14 +32,16 @@ import org.mconf.bbb.api.JoinServiceBase;
 import org.mconf.bbb.api.JoinServiceProxy;
 import org.mconf.bbb.chat.ChatMessage;
 import org.mconf.bbb.chat.ChatModule;
+import org.mconf.bbb.listeners.IListener;
 import org.mconf.bbb.listeners.ListenersModule;
+import org.mconf.bbb.users.IParticipant;
 import org.mconf.bbb.users.Participant;
 import org.mconf.bbb.users.UsersModule;
-import org.mconf.bbb.video.IVideoListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.flazr.rtmp.client.ClientOptions;
+import com.flazr.rtmp.message.Audio;
 import com.flazr.rtmp.message.Command;
 import com.flazr.util.Utils;
 
@@ -54,9 +57,6 @@ public class BigBlueButtonClient {
 	private ChatModule chatModule = null;
 	private UsersModule usersModule = null;
 	private ListenersModule listenersModule = null;
-
-	private Set<IBigBlueButtonClientListener> eventListeners = new LinkedHashSet<IBigBlueButtonClientListener>();
-	private Set<IVideoListener> videoListeners = new LinkedHashSet<IVideoListener>();
 
 	public void setMyUserId(int myUserId) {
 		this.myUserId = myUserId;
@@ -97,38 +97,6 @@ public class BigBlueButtonClient {
 		return listenersModule;
 	}
 
-	public void addListener(IBigBlueButtonClientListener listener) {
-		eventListeners.add(listener);
-	}
-
-	public void removeListener(IBigBlueButtonClientListener listener) {
-		eventListeners.remove(listener);
-	}
-
-	public Set<IBigBlueButtonClientListener> getListeners() {
-		return eventListeners;
-	}
-
-	public void addVideoListener(IVideoListener listener) {
-		videoListeners.add(listener);
-	}
-
-	public void removeVideoListener(IVideoListener listener) {
-		listener.stop();
-		videoListeners.remove(listener);
-	}
-
-	public void removeAllVideoListeners() {
-		for (IVideoListener v : videoListeners) {
-			v.stop();
-		}
-		videoListeners.clear();
-	}
-
-	public Set<IVideoListener> getVideoListeners() {
-		return videoListeners;
-	}	
-
 	public void createJoinService(String serverUrl) {
 		if (serverUrl.contains("/bigbluebutton/api/"))
 			serverUrl = serverUrl.substring(0, serverUrl.indexOf("/bigbluebutton/api/"));
@@ -153,11 +121,6 @@ public class BigBlueButtonClient {
 
 		mainConnection = new MainRtmpConnection(opt, this);
 		return mainConnection.connect();
-	}
-
-	@SuppressWarnings("unused")
-	private void connectSip() {
-
 	}
 
 	public void disconnect() {
@@ -230,18 +193,129 @@ public class BigBlueButtonClient {
 			return false;
 	}
 
-	public boolean onVideo(byte[] aux) {
-		for (IVideoListener l : videoListeners) {
-			l.onVideo(aux);
-		}
-		return true;
-	}
-
 	public boolean isConnected() {
 		if (mainConnection == null)
 			return false;
 		else
 			return mainConnection.isConnected();
 	}
+
+	/**
+	 * Listeners and related methods definition
+	 * 
+	 * @author felipe
+	 */
+	
+	public interface OnPublicChatMessageListener extends IBbbListener {
+		public void onPublicChatMessage(ChatMessage message, IParticipant source);
+		public void onPublicChatMessage(List<ChatMessage> publicChatMessages, Map<Integer, Participant> participants);
+	}
+	public interface OnPrivateChatMessageListener extends IBbbListener {
+		public void onPrivateChatMessage(ChatMessage message, IParticipant source);
+	}
+	public interface OnConnectedListener extends IBbbListener {
+		public void onConnectedSuccessfully();
+		public void onConnectedUnsuccessfully();
+	}
+	public interface OnDisconnectedListener extends IBbbListener {
+		public void onDisconnected();
+	}
+	public interface OnExceptionListener extends IBbbListener {
+		public void onException(Throwable throwable);
+	}
+	public interface OnKickUserListener extends IBbbListener {
+		public void onKickUser(IParticipant p);
+		public void onKickMyself();
+	}
+	public interface OnParticipantJoinedListener extends IBbbListener {
+		public void onParticipantJoined(IParticipant p);
+	}
+	public interface OnParticipantLeftListener extends IBbbListener {
+		public void onParticipantLeft(IParticipant p);
+	}
+	public interface OnParticipantStatusChangeListener extends IBbbListener {
+		public void onChangePresenter(IParticipant p);
+		public void onChangeHasStream(IParticipant p);
+		public void onChangeRaiseHand(IParticipant p);
+	}
+	public interface OnListenerJoinedListener extends IBbbListener {
+		public void onListenerJoined(IListener p);
+	}
+	public interface OnListenerLeftListener extends IBbbListener {
+		public void onListenerLeft(IListener p);
+	}
+	public interface OnListenerStatusChangeListener extends IBbbListener {
+		public void onChangeIsMuted(IListener p);
+		public void onChangeIsTalking(IListener p);
+	}
+	public interface OnAudioListener extends IBbbListener {
+		public void onAudio(Audio audio);
+	}
+	
+	private Set<OnPublicChatMessageListener> publicChatMessageListeners = new LinkedHashSet<OnPublicChatMessageListener>();
+	private Set<OnPrivateChatMessageListener> privateChatMessageListeners = new LinkedHashSet<OnPrivateChatMessageListener>();
+	private Set<OnConnectedListener> connectedListeners = new LinkedHashSet<OnConnectedListener>();
+	private Set<OnDisconnectedListener> disconnectedListeners = new LinkedHashSet<OnDisconnectedListener>();
+	private Set<OnExceptionListener> exceptionListeners = new LinkedHashSet<OnExceptionListener>();
+	private Set<OnKickUserListener> kickUserListeners = new LinkedHashSet<OnKickUserListener>();
+	private Set<OnParticipantJoinedListener> participantJoinedListeners = new LinkedHashSet<OnParticipantJoinedListener>();
+	private Set<OnParticipantLeftListener> participantLeftListeners = new LinkedHashSet<OnParticipantLeftListener>();
+	private Set<OnParticipantStatusChangeListener> participantStatusChangeListeners = new LinkedHashSet<OnParticipantStatusChangeListener>();
+	private Set<OnListenerJoinedListener> listenerJoinedListeners = new LinkedHashSet<OnListenerJoinedListener>();
+	private Set<OnListenerLeftListener> listenerLeftListeners = new LinkedHashSet<OnListenerLeftListener>();
+	private Set<OnListenerStatusChangeListener> listenerStatusChangeListeners = new LinkedHashSet<OnListenerStatusChangeListener>();
+	private Set<OnAudioListener> audioListeners = new LinkedHashSet<OnAudioListener>();
+	
+	public boolean addPublicChatMessageListener(OnPublicChatMessageListener listener) { return publicChatMessageListeners.add(listener); }
+	public boolean removePublicChatMessageListener(OnPublicChatMessageListener listener) { return publicChatMessageListeners.remove(listener); }
+	public Set<OnPublicChatMessageListener> getPublicChatMessageListeners() { return publicChatMessageListeners; }
+
+	public boolean addPrivateChatMessageListener(OnPrivateChatMessageListener listener) { return privateChatMessageListeners.add(listener); }
+	public boolean removePrivateChatMessageListener(OnPrivateChatMessageListener listener) { return privateChatMessageListeners.remove(listener); }
+	public Set<OnPrivateChatMessageListener> getPrivateChatMessageListener() { return privateChatMessageListeners; }
+	
+	public boolean addConnectedListener(OnConnectedListener listener) { return connectedListeners.add(listener); }
+	public boolean removeConnectedListener(OnConnectedListener listener) { return connectedListeners.remove(listener); }
+	public Set<OnConnectedListener> getConnectedListeners() { return connectedListeners; }
+	
+	public boolean addDisconnectedListener(OnDisconnectedListener listener) { return disconnectedListeners.add(listener); }
+	public boolean removeDisconnectedListener(OnDisconnectedListener listener) { return disconnectedListeners.remove(listener); }
+	public Set<OnDisconnectedListener> getDisconnectedListeners() { return disconnectedListeners; }
+	
+	public boolean addExceptionListener(OnExceptionListener listener) { return exceptionListeners.add(listener); }
+	public boolean removeExceptionListener(OnExceptionListener listener) { return exceptionListeners.remove(listener); }
+	public Set<OnExceptionListener> getExceptionListeners() { return exceptionListeners; }
+	
+	public boolean addKickUserListener(OnKickUserListener listener) { return kickUserListeners.add(listener); }
+	public boolean removeKickUserListener(OnKickUserListener listener) { return kickUserListeners.remove(listener); }
+	public Set<OnKickUserListener> getKickUserListeners() { return kickUserListeners; }
+	
+	public boolean addParticipantJoinedListener(OnParticipantJoinedListener listener) { return participantJoinedListeners.add(listener); }
+	public boolean removeParticipantJoinedListener(OnParticipantJoinedListener listener) { return participantJoinedListeners.remove(listener); }
+	public Set<OnParticipantJoinedListener> getParticipantJoinedListeners() { return participantJoinedListeners; }
+	
+	public boolean addParticipantLeftListener(OnParticipantLeftListener listener) { return participantLeftListeners.add(listener); }
+	public boolean removeParticipantLeftListener(OnParticipantLeftListener listener) { return participantLeftListeners.remove(listener); }
+	public Set<OnParticipantLeftListener> getParticipantLeftListeners() { return participantLeftListeners; }
+	
+	public boolean addParticipantStatusChangeListener(OnParticipantStatusChangeListener listener) { return participantStatusChangeListeners.add(listener); }
+	public boolean removeParticipantStatusChangeListener(OnParticipantStatusChangeListener listener) { return participantStatusChangeListeners.remove(listener); }
+	public Set<OnParticipantStatusChangeListener> getParticipantStatusChangeListeners() { return participantStatusChangeListeners; }
+	
+	public boolean addListenerJoinedListener(OnListenerJoinedListener listener) { return listenerJoinedListeners.add(listener); }
+	public boolean removeListenerJoinedListener(OnListenerJoinedListener listener) { return listenerJoinedListeners.remove(listener); }
+	public Set<OnListenerJoinedListener> getListenerJoinedListeners() { return listenerJoinedListeners; }
+	
+	public boolean addListenerLeftListener(OnListenerLeftListener listener) { return listenerLeftListeners.add(listener); }
+	public boolean removeListenerLeftListener(OnListenerLeftListener listener) { return listenerLeftListeners.remove(listener); }
+	public Set<OnListenerLeftListener> getListenerLeftListeners() { return listenerLeftListeners; }
+	
+	public boolean addListenerStatusChangeListener(OnListenerStatusChangeListener listener) { return listenerStatusChangeListeners.add(listener); }
+	public boolean removeListenerStatusChangeListener(OnListenerStatusChangeListener listener) { return listenerStatusChangeListeners.remove(listener); }
+	public Set<OnListenerStatusChangeListener> getListenerStatusChangeListeners() { return listenerStatusChangeListeners; }
+
+	public boolean addAudioListener(OnAudioListener listener) { return audioListeners.add(listener); }
+	public boolean removeAudioListener(OnAudioListener listener) { return audioListeners.remove(listener); }
+	public Set<OnAudioListener> getAudioListeners() { return audioListeners; }
 
 }

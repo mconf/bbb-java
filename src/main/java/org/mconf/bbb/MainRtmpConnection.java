@@ -34,6 +34,8 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.mconf.bbb.BigBlueButtonClient.OnConnectedListener;
+import org.mconf.bbb.BigBlueButtonClient.OnDisconnectedListener;
 import org.mconf.bbb.api.JoinService0Dot7;
 import org.mconf.bbb.api.JoinService0Dot8;
 import org.mconf.bbb.api.JoinedMeeting;
@@ -113,17 +115,6 @@ public class MainRtmpConnection extends RtmpConnection {
 
 	@Override
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-        Amf0Object object = AbstractMessage.object(
-                AbstractMessage.pair("app", options.getAppName()),
-                AbstractMessage.pair("flashVer", "WIN 9,0,124,2"),
-                AbstractMessage.pair("tcUrl", options.getTcUrl()),
-                AbstractMessage.pair("fpad", false),
-                AbstractMessage.pair("audioCodecs", 1639.0),
-                AbstractMessage.pair("videoCodecs", 252.0),
-                AbstractMessage.pair("objectEncoding", 0.0),
-                AbstractMessage.pair("capabilities", 15.0),
-                AbstractMessage.pair("videoFunction", 1.0));
-
         /*
          * https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/main/model/users/NetConnectionDelegate.as#L102
          * _netConnection.connect(uri,
@@ -137,9 +128,9 @@ public class MainRtmpConnection extends RtmpConnection {
 		 */		
 			
         JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
-        Command connect = null;
-        if (context.getJoinService().getClass() == JoinService0Dot8.class) 
-        	connect = new CommandAmf0("connect", object, 
+        options.setArgs((Object[]) null);
+        if (context.getJoinService() instanceof JoinService0Dot8)
+            options.setArgs(
         		meeting.getFullname(), 
         		meeting.getRole(), 
         		meeting.getConference(), 
@@ -148,8 +139,8 @@ public class MainRtmpConnection extends RtmpConnection {
         		meeting.getVoicebridge(), 
         		meeting.getRecord().equals("true"), 
         		meeting.getExternUserID());
-        else if (context.getJoinService().getClass() == JoinService0Dot7.class)
-        	connect = new CommandAmf0("connect", object, 
+        else if (context.getJoinService() instanceof JoinService0Dot7)
+            options.setArgs(
         		meeting.getFullname(), 
         		meeting.getRole(), 
         		meeting.getConference(), 
@@ -159,7 +150,7 @@ public class MainRtmpConnection extends RtmpConnection {
         		meeting.getRecord().equals("true"), 
         		meeting.getExternUserID());
 
-        writeCommandExpectingResult(e.getChannel(), connect);
+        writeCommandExpectingResult(e.getChannel(), Command.connect(options));
 	}
 	
 	@Override
@@ -167,11 +158,10 @@ public class MainRtmpConnection extends RtmpConnection {
 			ChannelStateEvent e) throws Exception {
 		super.channelDisconnected(ctx, e);
 		log.debug("Rtmp Channel Disconnected");
-		for (IBigBlueButtonClientListener l : context.getListeners()) {
-			l.onDisconnected();
-		}
 		
 		connected = false;
+		for (OnDisconnectedListener l : context.getDisconnectedListeners())
+			l.onDisconnected();
 	}
 
     @SuppressWarnings("unchecked")
@@ -189,10 +179,8 @@ public class MainRtmpConnection extends RtmpConnection {
 	    	context.setMyUserId(Integer.parseInt((String) command.getArg(0)));
 
 			connected = true;
-
-			for (IBigBlueButtonClientListener l : context.getListeners()) {
-				l.onConnected();
-			}
+			for (OnConnectedListener l : context.getConnectedListeners())
+				l.onConnectedSuccessfully();
 			
 	    	return true;
     	} else
@@ -254,10 +242,6 @@ public class MainRtmpConnection extends RtmpConnection {
     			log.info("ignoring rtmp message: {}", message);
 	        	break;
         }
-	}
-	
-	public BigBlueButtonClient getContext() {
-		return context;
 	}
 	
 	public boolean isConnected() {

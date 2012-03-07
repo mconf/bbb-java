@@ -107,12 +107,10 @@ public class JoinService0Dot8 extends JoinServiceBase {
 		String response = "Unknown error";
 		try {
 			response = getUrl(timestampUrl);
-			parseTimestamp(response);
-			log.debug("timestamp:{}",timestamp);
-			return true;
+			return parseTimestamp(response);
 		} catch (Exception e) {
 			e.printStackTrace();
-			log.error("Can't get the Timestamp from {}", serverUrl);
+			log.error("Can't get the timestamp from {}", serverUrl);
 			timestamp = 0;
 			return false;
 		}
@@ -125,6 +123,8 @@ public class JoinService0Dot8 extends JoinServiceBase {
 			if (getTimestamp()) {
 				lastRequest = System.currentTimeMillis();
 				return true;
+			} else {
+				log.error("Invalid security key");
 			}
 		}
 		return false;

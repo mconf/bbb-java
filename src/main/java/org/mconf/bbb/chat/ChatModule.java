@@ -29,9 +29,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.netty.channel.Channel;
-import org.mconf.bbb.IBigBlueButtonClientListener;
 import org.mconf.bbb.Module;
 import org.mconf.bbb.MainRtmpConnection;
+import org.mconf.bbb.BigBlueButtonClient.OnPrivateChatMessageListener;
+import org.mconf.bbb.BigBlueButtonClient.OnPublicChatMessageListener;
 import org.mconf.bbb.api.JoinService0Dot7;
 import org.mconf.bbb.users.IParticipant;
 import org.red5.server.api.IAttributeStore;
@@ -165,9 +166,10 @@ public class ChatModule extends Module implements ISharedObjectListener {
 			publicChatMessages.clear();
 			
 			List<Object> messages = (List<Object>) Arrays.asList((Object[]) command.getArg(0));
-			for (Object message : messages) {
-				onPublicChatMessage(new ChatMessage(message));
-			}
+			for (Object message : messages)
+				publicChatMessages.add(new ChatMessage(message));
+			for (OnPublicChatMessageListener listener : handler.getContext().getPublicChatMessageListeners())
+				listener.onPublicChatMessage(publicChatMessages, handler.getContext().getUsersModule().getParticipants());
 			return true;
 		}
 		return false;
@@ -211,17 +213,15 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	}
 	
 	public void onPublicChatMessage(ChatMessage chatMessage, IParticipant source) {
-		for (IBigBlueButtonClientListener l : handler.getContext().getListeners()) {
-			l.onPublicChatMessage(chatMessage, source);
-		}
+		for (OnPublicChatMessageListener listener : handler.getContext().getPublicChatMessageListeners())
+			listener.onPublicChatMessage(chatMessage, source);
 		log.info("handling public chat message: {}", chatMessage);
 		publicChatMessages.add(chatMessage);
 	}
 
 	public void onPrivateChatMessage(ChatMessage chatMessage, IParticipant source) {
-		for (IBigBlueButtonClientListener l : handler.getContext().getListeners()) {
-			l.onPrivateChatMessage(chatMessage, source);
-		}
+		for (OnPrivateChatMessageListener listener : handler.getContext().getPrivateChatMessageListener())
+			listener.onPrivateChatMessage(chatMessage, source);
 		synchronized (privateChatMessages) {
 			if (!privateChatMessages.containsKey(source.getUserId()))
 				privateChatMessages.put(source.getUserId(), new ArrayList<ChatMessage>());
