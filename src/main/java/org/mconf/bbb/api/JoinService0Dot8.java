@@ -107,9 +107,9 @@ public class JoinService0Dot8 extends JoinServiceBase {
 		String response = "Unknown error";
 		try {
 			response = getUrl(timestampUrl);
-			parseTimestamp(response);
+			boolean gotTimestamp = parseTimestamp(response);
 			log.debug("timestamp:{}",timestamp);
-			return true;
+			return gotTimestamp;
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Can't get the Timestamp from {}", serverUrl);

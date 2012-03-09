@@ -65,19 +65,27 @@ public class Meetings {
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.parse(new ByteArrayInputStream(str.getBytes("UTF-8")));
 		doc.getDocumentElement().normalize();
-
-		NodeList nodeMeetings = doc.getElementsByTagName("meeting");
-		// if nodeMeetings.getLength() == 0 and the conference is on, probably the "salt" is wrong
+		
+		//Element nodeResponse = (Element) doc.getElementsByTagName("response").item(0);
+		String returncode = doc.getElementsByTagName("returncode").item(0).getFirstChild().getNodeValue();
 		log.debug("parsing: {}", str);
-		log.debug("nodeMeetings.getLength() = {}", nodeMeetings.getLength());
-		for (int i = 0; i < nodeMeetings.getLength(); ++i) {
-			Meeting meeting = new Meeting();
-			if (meeting.parse((Element) nodeMeetings.item(i))) {
-				meetings.add(meeting);				
+		
+		if (returncode.equals("SUCCESS"))
+		{	
+			NodeList nodeMeetings = doc.getElementsByTagName("meeting");
+			// if nodeMeetings.getLength() == 0 and the conference is on, probably the "salt" is wrong
+			log.debug("nodeMeetings.getLength() = {}", nodeMeetings.getLength());
+			for (int i = 0; i < nodeMeetings.getLength(); ++i) {
+				Meeting meeting = new Meeting();
+				if (meeting.parse((Element) nodeMeetings.item(i))) 
+						meetings.add(meeting);				
+				
 			}
-		}
 
-		return true;
+			return true;
+		}
+		else
+			return false;
 	}
 
 	@Override

@@ -55,17 +55,24 @@ public abstract class JoinServiceBase {
 
 	public boolean load() {
 		String loadUrl = getFullDemoPath() + getLoadUrl();
+		boolean okParse = false;
 		try {
-			meetings.parse(getUrl(loadUrl));
+			okParse = meetings.parse(getUrl(loadUrl));
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.info("Can't connect to {}", loadUrl);
 			return false;
 		}
-
+		
 		log.debug(meetings.toString());
-		loaded = true;
-		return true;
+
+		if(okParse)
+		{
+			loaded = true;
+			return true;
+		}
+		else
+			return false;
 	}
 	
 	public boolean join(String meetingID, String name, boolean moderator) {
