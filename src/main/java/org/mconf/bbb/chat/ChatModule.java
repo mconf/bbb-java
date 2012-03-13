@@ -166,10 +166,12 @@ public class ChatModule extends Module implements ISharedObjectListener {
 			publicChatMessages.clear();
 			
 			List<Object> messages = (List<Object>) Arrays.asList((Object[]) command.getArg(0));
-			for (Object message : messages)
-				publicChatMessages.add(new ChatMessage(message));
-			for (OnPublicChatMessageListener listener : handler.getContext().getPublicChatMessageListeners())
-				listener.onPublicChatMessage(publicChatMessages, handler.getContext().getUsersModule().getParticipants());
+			if (!messages.isEmpty()) {
+				for (Object message : messages)
+					publicChatMessages.add(new ChatMessage(message));
+				for (OnPublicChatMessageListener listener : handler.getContext().getPublicChatMessageListeners())
+					listener.onPublicChatMessage(publicChatMessages, handler.getContext().getUsersModule().getParticipants());
+			}
 			return true;
 		}
 		return false;
