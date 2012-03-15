@@ -66,9 +66,20 @@ public class Meetings {
 		Document doc = db.parse(new ByteArrayInputStream(str.getBytes("UTF-8")));
 		doc.getDocumentElement().normalize();
 		
-		//Element nodeResponse = (Element) doc.getElementsByTagName("response").item(0);
-		String returncode = doc.getElementsByTagName("returncode").item(0).getFirstChild().getNodeValue();
+		String returncode;
 		log.debug("parsing: {}", str);
+		
+		//Element nodeResponse = (Element) doc.getElementsByTagName("response").item(0);
+		try
+		{
+			returncode = doc.getElementsByTagName("returncode").item(0).getFirstChild().getNodeValue();
+		}
+		catch(NullPointerException e)
+		{
+			//means that the connection is ok, but there's no meeting running at the moment
+			return true;
+		}
+
 		
 		if (returncode.equals("SUCCESS"))
 		{	
