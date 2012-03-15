@@ -234,8 +234,16 @@ public class UsersModule extends Module implements ISharedObjectListener {
 			log.debug("Inconsistent state here");
 			return;
 		}
-		Command cmd = new CommandAmf0("presentation.assignPresenter", null, userId, p.getName(), 1);
-		handler.writeCommandExpectingResult(channel, cmd);
+		
+		if (joinServiceVersion == JoinService0Dot7.class) {
+			Command cmd = new CommandAmf0("presentation.assignPresenter", null, userId, p.getName(), 1);
+			handler.writeCommandExpectingResult(channel, cmd);
+		}
+		
+		else { //if (joinServiceVersion == JoinService0Dot8.class)
+			Command cmd = new CommandAmf0("participants.assignPresenter", null, userId, p.getName(), 1);
+			handler.writeCommandExpectingResult(channel, cmd);
+		}
 	}
 
 	public void addStream(String streamName) {
@@ -245,7 +253,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	    	
 	    	cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", true);
 	    	handler.writeCommandExpectingResult(channel, cmd);
-		} else if (joinServiceVersion == JoinService0Dot8.class) {
+		} else { //if (joinServiceVersion == JoinService0Dot8.class) 
 	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "true,stream=" + streamName);
 	    	handler.writeCommandExpectingResult(channel, cmd);
 		}
@@ -258,7 +266,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	
 			cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", false);
 			handler.writeCommandExpectingResult(channel, cmd);
-		} else if (joinServiceVersion == JoinService0Dot8.class) {
+		} else { //if (joinServiceVersion == JoinService0Dot8.class) {
 	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "false,stream=" + streamName);
 	    	handler.writeCommandExpectingResult(channel, cmd);
 		}
