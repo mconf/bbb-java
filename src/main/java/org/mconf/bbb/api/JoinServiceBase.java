@@ -29,7 +29,7 @@ public abstract class JoinServiceBase {
 	protected abstract String getJoinUrl(Meeting meeting, String name, boolean moderator);
 	protected abstract String getDemoPath();
 	
-	private String getFullDemoPath() {
+	protected String getFullDemoPath() {
 		return getFullServerUrl() + getDemoPath();
 	}
 	
