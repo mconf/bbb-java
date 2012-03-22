@@ -103,10 +103,11 @@ public class JoinService0Dot8 extends JoinServiceBase {
 		String parameters = "action=getTimestamp";
 		String timestampUrl = getFullDemoPath() + "?" + parameters + "&checksum=" + checksum(parameters + salt);
 
-		log.debug("timestampUrl=" + timestampUrl);
+		log.debug("getTimestamp URL: " + timestampUrl);
 		String response = "Unknown error";
 		try {
 			response = getUrl(timestampUrl);
+			log.debug("getTimestamp response: " + response);
 			return parseTimestamp(response);
 		} catch (Exception e) {
 			e.printStackTrace();

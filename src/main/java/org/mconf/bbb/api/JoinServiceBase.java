@@ -55,7 +55,10 @@ public abstract class JoinServiceBase {
 
 	public boolean load() {
 		String loadUrl = getFullDemoPath() + getLoadUrl();
+		log.debug("getMeetings URL: " + loadUrl);
+		
 		boolean okParse = false;
+		loaded = false;
 		try {
 			okParse = meetings.parse(getUrl(loadUrl));
 		} catch (Exception e) {
@@ -64,14 +67,11 @@ public abstract class JoinServiceBase {
 			return false;
 		}
 		
-		log.debug(meetings.toString());
-
-		if(okParse)
-		{
+		if (okParse) {
+			log.debug(meetings.toString());
 			loaded = true;
 			return true;
-		}
-		else
+		} else
 			return false;
 	}
 	
