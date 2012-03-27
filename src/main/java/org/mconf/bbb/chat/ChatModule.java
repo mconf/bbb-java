@@ -29,11 +29,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.netty.channel.Channel;
-import org.mconf.bbb.Module;
-import org.mconf.bbb.MainRtmpConnection;
 import org.mconf.bbb.BigBlueButtonClient.OnPrivateChatMessageListener;
 import org.mconf.bbb.BigBlueButtonClient.OnPublicChatMessageListener;
-import org.mconf.bbb.api.JoinService0Dot7;
+import org.mconf.bbb.MainRtmpConnection;
+import org.mconf.bbb.Module;
+import org.mconf.bbb.api.ApplicationService;
 import org.mconf.bbb.users.IParticipant;
 import org.red5.server.api.IAttributeStore;
 import org.red5.server.api.so.IClientSharedObject;
@@ -61,7 +61,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	public ChatModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
 		
-		if (handler.getContext().getJoinService() instanceof JoinService0Dot7)
+		if (handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_7))
 			MESSAGE_ENCODING = MESSAGE_ENCODING_STRING;
 		else
 			MESSAGE_ENCODING = MESSAGE_ENCODING_TYPED_OBJECT;

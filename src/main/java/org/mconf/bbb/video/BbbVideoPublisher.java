@@ -45,10 +45,10 @@ public class BbbVideoPublisher {
 
 		opt = new ClientOptions();
 		opt.setClientVersionToUse(Utils.fromHex("00000000"));
-		opt.setHost(context.getJoinService().getServerUrl().toLowerCase().replace("http://", ""));
+		opt.setHost(context.getJoinService().getApplicationService().getServerUrl());
 		opt.setAppName("video/" + context.getJoinService().getJoinedMeeting().getConference());
 		opt.publishLive();
-		opt.setStreamName(streamName);		
+		opt.setStreamName(streamName);
 		opt.setReaderToPublish(reader);
 	}
 	

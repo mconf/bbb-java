@@ -23,8 +23,6 @@ package org.mconf.bbb.users;
 
 import java.util.Map;
 
-import org.mconf.bbb.api.JoinServiceBase;
-
 public class Participant implements IParticipant {
 
 	private Status status;
@@ -42,8 +40,8 @@ public class Participant implements IParticipant {
 		
 	}
 	
-	public Participant(Map<String, Object> param, Class<? extends JoinServiceBase> joinServiceClass) {
-		decode(param, joinServiceClass);
+	public Participant(Map<String, Object> param, String appServerVersion) {
+		decode(param, appServerVersion);
 	}
 	
 	/*
@@ -51,8 +49,8 @@ public class Participant implements IParticipant {
 	 * {status={raiseHand=false, hasStream=false, presenter=false}, name=Eclipse, userid=112.0, role=VIEWER}
 	 */
 	@SuppressWarnings("unchecked")
-	public void decode(Map<String, Object> param, Class<? extends JoinServiceBase> joinServiceClass) {
-		status = new Status((Map<String, Object>) param.get("status"), joinServiceClass);
+	public void decode(Map<String, Object> param, String appServerVersion) {
+		status = new Status((Map<String, Object>) param.get("status"), appServerVersion);
 		name = (String) param.get("name");
 		userid = ((Double) param.get("userid")).intValue();
 		role = (String) param.get("role");

@@ -22,6 +22,7 @@ public abstract class JoinServiceBase {
 	protected int serverPort = 0;
 	protected Meetings meetings = new Meetings();
 	protected boolean loaded = false;
+	protected ApplicationService appService = null;
 	
 	public abstract String getVersion();
 	protected abstract String getCreateMeetingUrl(String meetingID);
@@ -93,14 +94,24 @@ public abstract class JoinServiceBase {
 	private boolean join(String joinUrl) {
 		joinedMeeting = new JoinedMeeting();
 		try {
-			joinedMeeting.parse(getUrl(joinUrl));
+			String joinResponse = getUrl(joinUrl);
+			log.debug("join response: {}", joinResponse);
+			joinedMeeting.parse(joinResponse);
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Can't join the url {}", joinUrl);
 			return false;
 		}
 		
+		return joinResponse();
+	}
+
+	private boolean joinResponse() {
 		if (joinedMeeting.getReturncode().equals("SUCCESS")) {
+			if (joinedMeeting.getServer().length() != 0)
+				appService = new ApplicationService(joinedMeeting.getServer());
+			else
+				appService = new ApplicationService(serverUrl, getVersion());
 			return true;
 		} else {
 			if (joinedMeeting.getMessage() != null)
@@ -108,7 +119,7 @@ public abstract class JoinServiceBase {
 			return false;
 		}
 	}
-
+	
 	public boolean standardJoin(String joinUrl) {
 		String enterUrl = getFullServerUrl() + "/bigbluebutton/api/enter";
 			
@@ -116,20 +127,15 @@ public abstract class JoinServiceBase {
 		try {
 			HttpClient client = new DefaultHttpClient();
 			getUrl(client, joinUrl);
-			joinedMeeting.parse(getUrl(client, enterUrl));
+			String enterResponse = getUrl(client, enterUrl);
+			joinedMeeting.parse(enterResponse);
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Can't join the url {}", joinUrl);
 			return false;
 		}
 
-		if (joinedMeeting.getReturncode().equals("SUCCESS")) {
-			return true;
-		} else {
-			if (joinedMeeting.getMessage() != null)
-				log.error(joinedMeeting.getMessage());
-			return false;
-		}
+		return joinResponse();
 	}
 	
 	public JoinedMeeting getJoinedMeeting() {
@@ -148,8 +154,12 @@ public abstract class JoinServiceBase {
 		return serverPort;
 	}
 
-	public String getServerUrl() {
+	public String getApiServerUrl() {
 		return serverUrl;
+	}
+	
+	public ApplicationService getApplicationService() {
+		return appService;
 	}
 	
 	public void setServer(String serverUrl) {

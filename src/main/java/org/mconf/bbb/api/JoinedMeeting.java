@@ -48,6 +48,7 @@ public class JoinedMeeting {
 	private String record;
 	private String welcome;
 	private String message;
+	private String server;
 
 	public JoinedMeeting() {
 		
@@ -93,6 +94,7 @@ public class JoinedMeeting {
 			mode = ParserUtils.getNodeValue(nodeResponse, "mode");
 			record = ParserUtils.getNodeValue(nodeResponse, "record");
 			welcome = ParserUtils.getNodeValue(nodeResponse, "welcome");
+			server = ParserUtils.getNodeValue(nodeResponse, "server");
 		} else {
 			message = ParserUtils.getNodeValue(nodeResponse, "message");
 		}
@@ -153,15 +155,20 @@ public class JoinedMeeting {
 	public String getMessage() {
 		return message;
 	}
+	
+	public String getServer() {
+		return server;
+	}
 
 	@Override
 	public String toString() {
-		return "JoinedMeeting [conference=" + conference + ", confname="
-				+ confname + ", externUserID=" + externUserID + ", fullname="
-				+ fullname + ", meetingID=" + meetingID + ", message="
-				+ message + ", mode=" + mode + ", record=" + record
-				+ ", returncode=" + returncode + ", role=" + role + ", room="
-				+ room + ", voicebridge=" + voicebridge + ", webvoiceconf="
-				+ webvoiceconf + ", welcome=" + welcome + "]";
+		return "JoinedMeeting [returncode=" + returncode + ", fullname="
+				+ fullname + ", confname=" + confname + ", meetingID="
+				+ meetingID + ", externUserID=" + externUserID + ", role="
+				+ role + ", conference=" + conference + ", room=" + room
+				+ ", voicebridge=" + voicebridge + ", webvoiceconf="
+				+ webvoiceconf + ", mode=" + mode + ", record=" + record
+				+ ", welcome=" + welcome + ", message=" + message + ", server="
+				+ server + "]";
 	}
 }

@@ -36,20 +36,17 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.mconf.bbb.BigBlueButtonClient.OnConnectedListener;
 import org.mconf.bbb.BigBlueButtonClient.OnDisconnectedListener;
-import org.mconf.bbb.api.JoinService0Dot7;
-import org.mconf.bbb.api.JoinService0Dot8;
+import org.mconf.bbb.api.ApplicationService;
 import org.mconf.bbb.api.JoinedMeeting;
 import org.red5.server.so.SharedObjectMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.flazr.amf.Amf0Object;
 import com.flazr.rtmp.RtmpDecoder;
 import com.flazr.rtmp.RtmpEncoder;
 import com.flazr.rtmp.RtmpMessage;
 import com.flazr.rtmp.client.ClientHandshakeHandler;
 import com.flazr.rtmp.client.ClientOptions;
-import com.flazr.rtmp.message.AbstractMessage;
 import com.flazr.rtmp.message.Command;
 import com.flazr.rtmp.message.CommandAmf0;
 import com.flazr.rtmp.message.Control;
@@ -129,17 +126,7 @@ public class MainRtmpConnection extends RtmpConnection {
 			
         JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
         options.setArgs((Object[]) null);
-        if (context.getJoinService() instanceof JoinService0Dot8)
-            options.setArgs(
-        		meeting.getFullname(), 
-        		meeting.getRole(), 
-        		meeting.getConference(), 
-//        		meeting.getMode(), 
-        		meeting.getRoom(), 
-        		meeting.getVoicebridge(), 
-        		meeting.getRecord().equals("true"), 
-        		meeting.getExternUserID());
-        else if (context.getJoinService() instanceof JoinService0Dot7)
+        if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_7))
             options.setArgs(
         		meeting.getFullname(), 
         		meeting.getRole(), 
@@ -147,7 +134,17 @@ public class MainRtmpConnection extends RtmpConnection {
         		meeting.getMode(), 
         		meeting.getRoom(), 
         		meeting.getVoicebridge(), 
-        		meeting.getRecord().equals("true"), 
+        		meeting.getRecord().toLowerCase().equals("true"), 
+        		meeting.getExternUserID());
+        else // if (context.getJoinService().getApplicationServer().getServerVersion().equals(ApplicationServer.VERSION_0_8))
+            options.setArgs(
+        		meeting.getFullname(), 
+        		meeting.getRole(), 
+        		meeting.getConference(), 
+//        		meeting.getMode(), 
+        		meeting.getRoom(), 
+        		meeting.getVoicebridge(), 
+        		meeting.getRecord().toLowerCase().equals("true"), 
         		meeting.getExternUserID());
 
         writeCommandExpectingResult(e.getChannel(), Command.connect(options));

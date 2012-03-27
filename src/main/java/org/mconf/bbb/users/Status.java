@@ -23,8 +23,7 @@ package org.mconf.bbb.users;
 
 import java.util.Map;
 
-import org.mconf.bbb.api.JoinService0Dot8;
-import org.mconf.bbb.api.JoinServiceBase;
+import org.mconf.bbb.api.ApplicationService;
 
 public class Status {
 
@@ -33,8 +32,8 @@ public class Status {
 	private boolean presenter;
 	private String streamName;
 
-	public Status(Map<String, Object> param, Class<? extends JoinServiceBase> joinServiceClass) {
-		decode(param, joinServiceClass);
+	public Status(Map<String, Object> param, String appServerVersion) {
+		decode(param, appServerVersion);
 	}
 	
 	public Status() {
@@ -44,10 +43,10 @@ public class Status {
 	 * example:
 	 * {raiseHand=false, hasStream=false, presenter=true}
 	 */
-	public void decode(Map<String, Object> param, Class<? extends JoinServiceBase> joinServiceClass) {
+	public void decode(Map<String, Object> param, String appServerVersion) {
 		raiseHand = (Boolean) param.get("raiseHand");
 		setHasStream(param.get("hasStream"));
-		if (joinServiceClass != JoinService0Dot8.class)
+		if (appServerVersion.equals(ApplicationService.VERSION_0_7))
 			streamName = hasStream? (String) param.get("streamName") : "";
 		presenter = (Boolean) param.get("presenter");
 	}
