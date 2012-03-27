@@ -63,7 +63,7 @@ public abstract class RtmpConnection extends ClientHandler implements ChannelFut
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
 		String exceptionMessage = e.getCause().getMessage();
-		if (exceptionMessage.contains("ArrayIndexOutOfBoundsException") && exceptionMessage.contains("bad value / byte: 101 (hex: 65)")) {
+		if (exceptionMessage != null && exceptionMessage.contains("ArrayIndexOutOfBoundsException") && exceptionMessage.contains("bad value / byte: 101 (hex: 65)")) {
 			log.debug("Ignoring malformed metadata");
 			return;
 		} else {
