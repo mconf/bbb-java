@@ -58,7 +58,8 @@ public class Meetings {
 
 	}
 
-	public boolean parse(String str) throws ParserConfigurationException, UnsupportedEncodingException, SAXException, IOException, DOMException, ParseException {
+	//.
+	public int parse(String str) throws ParserConfigurationException, UnsupportedEncodingException, SAXException, IOException, DOMException, ParseException {
 		meetings.clear();
 
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -69,7 +70,16 @@ public class Meetings {
 		String returncode;
 		log.debug("parsing: {}", str);
 		
-		//Element nodeResponse = (Element) doc.getElementsByTagName("response").item(0);
+		try
+		{
+			Element nodeResponse = (Element) doc.getElementsByTagName("meetings").item(0);
+		}
+		catch(NullPointerException e)
+		{
+			//means that the first node is not <meetings> =>  the server doesn't have mobile access
+			return JoinServiceBase.E_MOBILE_NOT_SUPPORTED;
+		}
+
 		try
 		{
 			returncode = doc.getElementsByTagName("returncode").item(0).getFirstChild().getNodeValue();
@@ -77,7 +87,7 @@ public class Meetings {
 		catch(NullPointerException e)
 		{
 			//means that the connection is ok, but there's no meeting running at the moment
-			return true;
+			return JoinServiceBase.E_OK;
 		}
 
 		
@@ -93,10 +103,10 @@ public class Meetings {
 				
 			}
 
-			return true;
+			return JoinServiceBase.E_OK;
 		}
 		else
-			return false;
+			return JoinServiceBase.E_UNKNOWN_ERROR;
 	}
 
 	@Override

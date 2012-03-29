@@ -178,7 +178,7 @@ public class BigBlueButtonClient {
 		BigBlueButtonClient client = new BigBlueButtonClient();
 		client.createJoinService("http://test.bigbluebutton.org/", "03b07");
 		client.getJoinService().load();
-		if (client.getJoinService().join("English 110", "Eclipse", false)
+		if (  (client.getJoinService().join("English 110", "Eclipse", false) == JoinServiceBase.E_OK) //.
 				&& (client.getJoinService().getJoinedMeeting() != null)) {
 			client.connectBigBlueButton();
 		}

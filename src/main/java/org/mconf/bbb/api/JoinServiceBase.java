@@ -15,6 +15,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class JoinServiceBase {
+	
+	public static final int E_OK = 0;
+	public static final int E_CHECKSUM_NOT_INFORMED = 1;
+	public static final int E_INVALID_CHECKSUM = 2;
+	public static final int E_INVALID_TIMESTAMP = 3;
+	public static final int E_EMPTY_SECURITY_KEY = 4;
+	public static final int E_MISSING_PARAM_MEETINGID = 5;
+	public static final int E_MISSING_PARAM_FULLNAME = 6;
+	public static final int E_MISSING_PARAM_PASSWORD = 7;
+	public static final int E_MISSING_PARAM_TIMESTAMP = 8;
+	public static final int E_INVALID_URL = 9;
+	public static final int E_SERVER_UNREACHABLE = 10;
+	public static final int E_MOBILE_NOT_SUPPORTED = 11;
+	public static final int E_UNKNOWN_ERROR = 12;
+	
 	private static final Logger log = LoggerFactory.getLogger(JoinServiceBase.class);
 
 	protected JoinedMeeting joinedMeeting = null;
@@ -37,7 +52,7 @@ public abstract class JoinServiceBase {
 		return serverUrl + ":" + serverPort;
 	}
 	
-	public boolean createMeeting(String meetingID) {
+	public int createMeeting(String meetingID) { //.
 		String createUrl = getFullDemoPath() + getCreateMeetingUrl(meetingID);
 		String response = "Unknown error";
 		try {
@@ -48,64 +63,61 @@ public abstract class JoinServiceBase {
 		}
 		
 		if (meetingID.equals(response))
-			return true;
+			return E_OK;
 		else
-			return false;
+			return E_SERVER_UNREACHABLE;
 	}
 
-	public boolean load() {
+	public int load() { //.
 		String loadUrl = getFullDemoPath() + getLoadUrl();
-		boolean okParse = false;
+		int returnCode;
 		try {
-			okParse = meetings.parse(getUrl(loadUrl));
+			returnCode = meetings.parse(getUrl(loadUrl)); 
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.info("Can't connect to {}", loadUrl);
-			return false;
+			return E_SERVER_UNREACHABLE;
 		}
 		
 		log.debug(meetings.toString());
 
-		if(okParse)
-		{
+		if(returnCode == E_OK)
 			loaded = true;
-			return true;
-		}
-		else
-			return false;
+		
+		return returnCode;
 	}
 	
-	public boolean join(String meetingID, String name, boolean moderator) {
+	public int join(String meetingID, String name, boolean moderator) { //.
 		if (!loaded)
-			return false;
+			return E_SERVER_UNREACHABLE;
 		
 		for (Meeting meeting : meetings.getMeetings()) {
 			if (meeting.getMeetingID().equals(meetingID))
 				return join(meeting, name, moderator);
 		}
-		return false;
+		return E_SERVER_UNREACHABLE;
 	}
 
-	public boolean join(Meeting meeting, String name, boolean moderator) {
+	public int join(Meeting meeting, String name, boolean moderator) {  
 		return join(getFullDemoPath() + getJoinUrl(meeting, name, moderator));
 	}
 	
-	private boolean join(String joinUrl) {
+	private int join(String joinUrl) { //.
 		joinedMeeting = new JoinedMeeting();
 		try {
 			joinedMeeting.parse(getUrl(joinUrl));
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Can't join the url {}", joinUrl);
-			return false;
+			return E_SERVER_UNREACHABLE;
 		}
 		
 		if (joinedMeeting.getReturncode().equals("SUCCESS")) {
-			return true;
+			return E_OK;
 		} else {
 			if (joinedMeeting.getMessage() != null)
 				log.error(joinedMeeting.getMessage());
-			return false;
+			return E_SERVER_UNREACHABLE;
 		}
 	}
 

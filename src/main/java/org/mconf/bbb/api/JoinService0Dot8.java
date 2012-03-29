@@ -18,7 +18,16 @@ public class JoinService0Dot8 extends JoinServiceBase {
 			lastRequest = 0;
 
 	public void setSalt(String salt) {
-		this.salt = salt;
+		if (!salt.equals(this.salt)) {
+			this.salt = salt;
+			// if the salt is changed, we need to reset the timestamp stuff
+			this.timestamp = 0;
+			this.lastRequest = 0;
+		}
+	}
+	
+	public String getSalt() {
+		return this.salt;
 	}
 	
 	@Override
@@ -28,9 +37,10 @@ public class JoinService0Dot8 extends JoinServiceBase {
 	}
 	
 	@Override
-	public boolean createMeeting(String meetingID) {
-		if (!updateTimestamp())
-			return false;
+	public int createMeeting(String meetingID) { //.
+		int code = updateTimestamp();
+		if (code != E_OK)
+			return code;
 
 		return super.createMeeting(meetingID);
 	}
@@ -51,9 +61,10 @@ public class JoinService0Dot8 extends JoinServiceBase {
 	}
 	
 	@Override
-	public boolean join(String meetingID, String name, boolean moderator) {
-		if (!updateTimestamp())
-			return false;
+	public int join(String meetingID, String name, boolean moderator) { //.
+		int code = updateTimestamp();
+		if (code != E_OK)
+			return code;
 		
 		return super.join(meetingID, name, moderator);
 	}
@@ -65,14 +76,15 @@ public class JoinService0Dot8 extends JoinServiceBase {
 	}
 	
 	@Override
-	public boolean load() {
-		if (!updateTimestamp())
-			return false;
+	public int load() { //.
+		int code = updateTimestamp();
+		if (code != E_OK)
+			return code;
 		
 		return super.load();
 	}
 
-	private boolean parseTimestamp(String str) {
+	private int parseTimestamp(String str) { //.
 		try {
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 			DocumentBuilder db = dbf.newDocumentBuilder();
@@ -83,23 +95,29 @@ public class JoinService0Dot8 extends JoinServiceBase {
 
 			if (returncode.equals("SUCCESS")) {	
 				timestamp = Long.parseLong(nodeResponse.getElementsByTagName("timestamp").item(0).getFirstChild().getNodeValue());
-				return true;
+				return E_OK;
 			}
 			else
 			{
 				log.debug("Failed getting the timestamp");
-				return false;
+				log.debug("Start parsing the message key");
+				String messageKey = nodeResponse.getElementsByTagName("messageKey").item(0).getFirstChild().getNodeValue();
+				int errorCode = getErrorCode(messageKey);
+				log.debug("{}",errorCode);
+				log.debug(str);
+				
+				return errorCode;
 			}
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 			log.warn("Failed to parse: {}", str);
-			return false;
+			return E_INVALID_TIMESTAMP; //que constante?
 		}
 	}
 
-	private boolean getTimestamp() {	
+	private int getTimestamp() {	//.
 		String parameters = "action=getTimestamp";
 		String timestampUrl = getFullDemoPath() + "?" + parameters + "&checksum=" + checksum(parameters + salt);
 
@@ -112,27 +130,59 @@ public class JoinService0Dot8 extends JoinServiceBase {
 			e.printStackTrace();
 			log.error("Can't get the timestamp from {}", serverUrl);
 			timestamp = 0;
-			return false;
+			return E_INVALID_TIMESTAMP; //que constante?
 		}
 	}
 	
-	private boolean updateTimestamp() {
+	private int updateTimestamp() { //.
+		int code;
 		if (System.currentTimeMillis() < lastRequest + 55000)
-			return true;
+			return E_OK;
 		else {
-			if (getTimestamp()) {
+			code = getTimestamp();
+			if (code == E_OK) {  
 				lastRequest = System.currentTimeMillis();
-				return true;
+				return E_OK;
 			} else {
 				log.error("Invalid security key");
 			}
 		}
-		return false;
+		return code;
 	}
 
 	@Override
 	public String getVersion() {
 		return "0.8";
+	}
+	
+	private int getErrorCode(String message)
+	{
+	    if(message.equals("checksumError"))
+	    	return E_INVALID_CHECKSUM; //could return E_INVALID_CHECKSUM;
+	    
+	    if(message.equals("invalidTimestamp"))
+	    	return E_INVALID_TIMESTAMP;
+	    
+	    if(message.equals("emptySecurityKey"))
+	    	return E_EMPTY_SECURITY_KEY;
+	    
+	    if(message.equals("missingParamMeetingID"))
+	    	return  E_MISSING_PARAM_MEETINGID;
+	    
+	    if(message.equals("missingParamFullName"))
+	    	return  E_MISSING_PARAM_FULLNAME;
+	    
+	    if(message.equals("invalidPassword"))
+	    	return E_MISSING_PARAM_PASSWORD;
+	    
+	    if(message.equals("missingParamTimestamp"))
+	    	return E_MISSING_PARAM_TIMESTAMP;
+	    
+	    if(message.equals("invalidAction"))
+	    	return E_INVALID_URL;
+	    
+	    else
+	    	return E_UNKNOWN_ERROR; 	
 	}
 
 }
