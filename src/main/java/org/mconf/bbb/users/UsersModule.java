@@ -27,15 +27,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.netty.channel.Channel;
-import org.mconf.bbb.MainRtmpConnection;
-import org.mconf.bbb.Module;
 import org.mconf.bbb.BigBlueButtonClient.OnKickUserListener;
 import org.mconf.bbb.BigBlueButtonClient.OnParticipantJoinedListener;
 import org.mconf.bbb.BigBlueButtonClient.OnParticipantLeftListener;
 import org.mconf.bbb.BigBlueButtonClient.OnParticipantStatusChangeListener;
-import org.mconf.bbb.api.JoinService0Dot7;
-import org.mconf.bbb.api.JoinService0Dot8;
-import org.mconf.bbb.api.JoinServiceBase;
+import org.mconf.bbb.MainRtmpConnection;
+import org.mconf.bbb.Module;
+import org.mconf.bbb.api.ApplicationService;
 import org.red5.server.api.IAttributeStore;
 import org.red5.server.api.so.IClientSharedObject;
 import org.red5.server.api.so.ISharedObjectBase;
@@ -53,12 +51,12 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	private Map<Integer, Participant> participants = new ConcurrentHashMap<Integer, Participant>();
 	private int moderatorCount = 0, participantCount = 0;
-	private Class<? extends JoinServiceBase> joinServiceVersion;
+	private String joinServiceVersion;
 
 	public UsersModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
 		
-		joinServiceVersion = handler.getContext().getJoinService().getClass();
+		joinServiceVersion = handler.getContext().getJoinService().getApplicationService().getVersion();
 		
 		participantsSO = handler.getSharedObject("participantsSO", false);
 		participantsSO.addSharedObjectListener(this);
@@ -235,7 +233,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 			return;
 		}
 		
-		if (joinServiceVersion == JoinService0Dot7.class) {
+		if (joinServiceVersion.equals(ApplicationService.VERSION_0_7)) {
 			Command cmd = new CommandAmf0("presentation.assignPresenter", null, userId, p.getName(), 1);
 			handler.writeCommandExpectingResult(channel, cmd);
 		}
@@ -247,7 +245,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	public void addStream(String streamName) {
-		if (joinServiceVersion == JoinService0Dot7.class) {
+		if (joinServiceVersion.equals(ApplicationService.VERSION_0_7)) {
 	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "streamName", streamName);
 	    	handler.writeCommandExpectingResult(channel, cmd);
 	    	
@@ -260,7 +258,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	public void removeStream(String streamName) {
-		if (joinServiceVersion == JoinService0Dot7.class) {
+		if (joinServiceVersion.equals(ApplicationService.VERSION_0_7)) {
 			Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "");
 			handler.writeCommandExpectingResult(channel, cmd);
 	

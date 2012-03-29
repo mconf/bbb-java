@@ -41,7 +41,7 @@ public class BbbVoiceConnection extends VoiceConnection {
 
 		options = new ClientOptions();
 		options.setClientVersionToUse(Utils.fromHex("00000000"));
-		options.setHost(context.getJoinService().getServerUrl().toLowerCase().replace("http://", ""));
+		options.setHost(context.getJoinService().getApplicationService().getServerUrl());
 		options.setAppName("sip");
 		options.publishLive();
 		if (reader != null) {

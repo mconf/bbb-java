@@ -111,11 +111,11 @@ public class BigBlueButtonClient {
 	public JoinServiceBase getJoinService() {
 		return joinServiceProxy.getJoinService();
 	}
-
+	
 	public boolean connectBigBlueButton() {
 		ClientOptions opt = new ClientOptions();
 		opt.setClientVersionToUse(Utils.fromHex("00000000"));
-		opt.setHost(getJoinService().getServerUrl().toLowerCase().replace("http://", ""));
+		opt.setHost(getJoinService().getApplicationService().getServerUrl());
 		opt.setAppName("bigbluebutton/" + getJoinService().getJoinedMeeting().getConference());
 		log.debug(opt.toString());
 
