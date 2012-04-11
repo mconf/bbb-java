@@ -196,7 +196,7 @@ public abstract class VoiceConnection extends RtmpConnection {
                     newOptions.setReaderToPublish(options.getReaderToPublish());
                 }
 
-                channel.write(Command.publish(publishStreamId, newOptions));
+                channel.write(Command.publish(publishStreamId, holdChannel(publishStreamId), newOptions));
                 return;
         	}
 

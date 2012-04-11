@@ -31,17 +31,18 @@ import com.flazr.util.Utils;
 
 
 public class BbbVideoPublisher {
-	@SuppressWarnings("unused")
 	private static final Logger log = LoggerFactory.getLogger(BbbVideoPublisher.class);
 
-	public VideoPublisherConnection videoConnection;
+	/* static */private VideoPublisherConnection videoConnection = null;
 	private String streamName;
 	private BigBlueButtonClient context;
 	private ClientOptions opt;
+//	private RtmpReader reader;
 	
 	public BbbVideoPublisher(BigBlueButtonClient context, RtmpReader reader, String streamName) {
 		this.context = context;
 		this.streamName = streamName;
+//		this.reader = reader;
 
 		opt = new ClientOptions();
 		opt.setClientVersionToUse(Utils.fromHex("00000000"));
@@ -58,8 +59,11 @@ public class BbbVideoPublisher {
 	
 	public void start() {
 		context.getUsersModule().addStream(streamName);
-		videoConnection = new VideoPublisherConnection(opt, context);
-		videoConnection.connect();
+		if (videoConnection == null) {
+			videoConnection = new VideoPublisherConnection(opt, context);
+			videoConnection.connect();
+		}
+//		videoConnection.addPublishStream(streamName, reader);
 	}
 	
 	public void stop() {
