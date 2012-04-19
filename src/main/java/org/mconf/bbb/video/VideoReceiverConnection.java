@@ -21,17 +21,12 @@
 
 package org.mconf.bbb.video;
 
-import java.util.concurrent.Executor;
-
-import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.mconf.bbb.BigBlueButtonClient;
 import org.mconf.bbb.RtmpConnection;
 import org.slf4j.Logger;
@@ -56,10 +51,8 @@ public abstract class VideoReceiverConnection extends RtmpConnection {
 	}
 	
 	@Override
-	protected ClientBootstrap getBootstrap(Executor executor) {
-        final ChannelFactory factory = new NioClientSocketChannelFactory(executor, executor);
-        final ClientBootstrap bootstrap = new ClientBootstrap(factory);
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+	protected ChannelPipelineFactory pipelineFactory() {
+		return new ChannelPipelineFactory() {
 			@Override
 			public ChannelPipeline getPipeline() throws Exception {
 		        final ChannelPipeline pipeline = Channels.pipeline();
@@ -69,12 +62,9 @@ public abstract class VideoReceiverConnection extends RtmpConnection {
 		        pipeline.addLast("handler", VideoReceiverConnection.this);
 		        return pipeline;
 			}
-		});
-        bootstrap.setOption("tcpNoDelay" , true);
-        bootstrap.setOption("keepAlive", true);
-        return bootstrap;
+		};
 	}
-
+	
 	@Override
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
         options.setArgs((Object[]) null);

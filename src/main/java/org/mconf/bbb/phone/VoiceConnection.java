@@ -22,17 +22,13 @@
 package org.mconf.bbb.phone;
 
 import java.util.Map;
-import java.util.concurrent.Executor;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.mconf.bbb.BigBlueButtonClient;
 import org.mconf.bbb.RtmpConnection;
 import org.mconf.bbb.api.JoinedMeeting;
@@ -68,10 +64,8 @@ public abstract class VoiceConnection extends RtmpConnection {
 	}
 	
 	@Override
-	protected ClientBootstrap getBootstrap(Executor executor) {
-        final ChannelFactory factory = new NioClientSocketChannelFactory(executor, executor);
-        final ClientBootstrap bootstrap = new ClientBootstrap(factory);
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+	protected ChannelPipelineFactory pipelineFactory() {
+		return new ChannelPipelineFactory() {
 			@Override
 			public ChannelPipeline getPipeline() throws Exception {
 		        final ChannelPipeline pipeline = Channels.pipeline();
@@ -81,10 +75,7 @@ public abstract class VoiceConnection extends RtmpConnection {
 		        pipeline.addLast("handler", VoiceConnection.this);
 		        return pipeline;
 			}
-		});
-        bootstrap.setOption("tcpNoDelay" , true);
-        bootstrap.setOption("keepAlive", true);
-        return bootstrap;
+		};
 	}
 
 	@Override
@@ -187,7 +178,7 @@ public abstract class VoiceConnection extends RtmpConnection {
                     if(options.getLoop() > 1) {
                         reader = new LoopedReader(reader, options.getLoop());
                     }
-                    publisher = new RtmpPublisher(reader, publishStreamId, options.getBuffer(), true, false) {
+                    publisher = new RtmpPublisher(reader, publishStreamId, options.getBuffer(), false, false) {
                         @Override protected RtmpMessage[] getStopMessages(long timePosition) {
                             return new RtmpMessage[]{Command.unpublish(publishStreamId)};
                         }

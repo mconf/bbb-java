@@ -1,14 +1,16 @@
 package org.mconf.bbb;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.mconf.bbb.BigBlueButtonClient.OnConnectedListener;
 import org.mconf.bbb.BigBlueButtonClient.OnExceptionListener;
 import org.slf4j.Logger;
@@ -28,25 +30,32 @@ public abstract class RtmpConnection extends ClientHandler implements ChannelFut
 		this.context = context;
 	}
 	
-	private ClientBootstrap bootstrap;
-	private ChannelFuture future;
+	private ClientBootstrap bootstrap = null;
+	private ChannelFuture future = null;
+	private ChannelFactory factory = null;
 	
 	public boolean connect() {  
-        bootstrap = getBootstrap(Executors.newCachedThreadPool());
+        factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
+        bootstrap = new ClientBootstrap(factory);
+        bootstrap.setPipelineFactory(pipelineFactory());
         future = bootstrap.connect(new InetSocketAddress(options.getHost(), options.getPort()));
         future.addListener(this);
     	return true;
     }
 	
 	public void disconnect() {
-		if (future.getChannel().isConnected()) {
-			future.getChannel().close(); //ClosedChannelException
-			future.getChannel().getCloseFuture().awaitUninterruptibly();
-			bootstrap.getFactory().releaseExternalResources();
+		if (future != null) {
+			if (future.getChannel().isConnected()) {
+				log.debug("Channel is connected, disconnecting");
+				future.getChannel().close(); //ClosedChannelException
+				future.getChannel().getCloseFuture().awaitUninterruptibly();
+			}
+			factory.releaseExternalResources();
+			future = null; factory = null; bootstrap = null;
 		}
 	}
 	
-	abstract protected ClientBootstrap getBootstrap(final Executor executor);
+	abstract protected ChannelPipelineFactory pipelineFactory();
 	
 	@Override
 	public void operationComplete(ChannelFuture future) throws Exception {
