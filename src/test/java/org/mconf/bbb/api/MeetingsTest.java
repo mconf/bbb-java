@@ -1,8 +1,5 @@
 package org.mconf.bbb.api;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
@@ -10,12 +7,17 @@ import java.util.Date;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import junit.framework.TestCase;
+
 import org.junit.Test;
 import org.w3c.dom.DOMException;
 import org.xml.sax.SAXException;
 
-public class MeetingsTest {
+public class MeetingsTest extends TestCase {
 
+	private static final String MOBILE_RETURN = "<meetings><meeting><returncode>SUCCESS</returncode><meetingName>Demo</meetingName><meetingID>Demo Meeting2 018</meetingID><internalMeetingID>b8f5f456993911b7bd61946b6f00287f7e51ae1a-1335298185762</internalMeetingID><createTime>1335298185762</createTime><voiceBridge>67632</voiceBridge><attendeePW>AF5YI3RR</attendeePW><moderatorPW>kfhbRDhM</moderatorPW><running>true</running><recording>false</recording><hasBeenForciblyEnded>false</hasBeenForciblyEnded><startTime>1335298188201</startTime><endTime>1335298302668</endTime><participantCount>1</participantCount><maxUsers>20</maxUsers><moderatorCount>1</moderatorCount><listenerCount>0</listenerCount><attendees><attendee><userID>r9qqzlimykxc</userID><fullName>Bot 053</fullName><role>MODERATOR</role><isPresenter>false</isPresenter><hasVideoStream>false</hasVideoStream><videoStreamName></videoStreamName></attendee></attendees><metadata></metadata><messageKey></messageKey><message></message></meeting><meeting><returncode>SUCCESS</returncode><meetingName>Demo Meeting</meetingName><meetingID>Demo Meeting</meetingID><internalMeetingID>183f0bf3a0982a127bdb8161e0c44eb696b3e75c-1335366476889</internalMeetingID><createTime>1335366476889</createTime><voiceBridge>72067</voiceBridge><attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><running>true</running><recording>false</recording><hasBeenForciblyEnded>false</hasBeenForciblyEnded><startTime>1335366478250</startTime><endTime>0</endTime><participantCount>1</participantCount><maxUsers>20</maxUsers><moderatorCount>1</moderatorCount><listenerCount>0</listenerCount><attendees><attendee><userID>py5zgkej453s</userID><fullName>teste</fullName><role>MODERATOR</role><isPresenter>true</isPresenter><hasVideoStream>false</hasVideoStream><videoStreamName></videoStreamName></attendee></attendees><metadata></metadata><messageKey></messageKey><message></message></meeting></meetings>";
+	private static final String DEFAULT_RETURN = "<response><returncode>SUCCESS</returncode><meetings><meeting><meetingID>Demo Meeting2 018</meetingID><meetingName>Demo</meetingName><createTime>1335298185762</createTime><attendeePW>AF5YI3RR</attendeePW><moderatorPW>kfhbRDhM</moderatorPW><hasBeenForciblyEnded>false</hasBeenForciblyEnded><running>true</running><participantCount>1</participantCount></meeting><meeting><meetingID>Demo Meeting</meetingID><meetingName>Demo Meeting</meetingName><createTime>1335366476889</createTime><attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><hasBeenForciblyEnded>false</hasBeenForciblyEnded><running>true</running><participantCount>1</participantCount></meeting></meetings></response>";
+	
 //	<meetings>
 //		<meeting>
 //			<returncode>SUCCESS</returncode>
@@ -130,5 +132,27 @@ public class MeetingsTest {
 	public void testParseNoAttendees() throws UnsupportedEncodingException, DOMException, ParserConfigurationException, SAXException, IOException, ParseException {
 		Meetings meetings = new Meetings();
 		meetings.parse("<meetings><meeting><returncode>SUCCESS</returncode><meetingName>English 101</meetingName><meetingID>English 101</meetingID><createTime>1313009478450</createTime><attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><running>false</running><hasBeenForciblyEnded>true</hasBeenForciblyEnded><startTime>1313009481417</startTime><endTime>1313010108752</endTime><participantCount>0</participantCount><maxUsers>20</maxUsers><moderatorCount>0</moderatorCount><attendees></attendees><metadata><email>ck@test</email><description>ck</description><meetingId>English 101</meetingId></metadata><messageKey></messageKey><message></message></meeting></meetings>");
+	}
+	
+	@Test
+	public void testMobileApi() {
+		Meetings meetings = new Meetings();
+		try {
+			assertEquals(meetings.parse(MOBILE_RETURN), JoinServiceBase.E_OK);
+			
+			Meeting meeting = meetings.getMeetings().get(0);
+		} catch (Exception e) {
+			fail();
+		}
+	}
+
+	@Test
+	public void testDefaultApi() {
+		Meetings meetings = new Meetings();
+		try {
+			assertEquals(meetings.parse(DEFAULT_RETURN), JoinServiceBase.E_OK);
+		} catch (Exception e) {
+			fail();
+		}
 	}
 }
