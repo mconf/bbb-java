@@ -32,72 +32,48 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 public class Meeting {
-	protected String returncode, 
-		meetingName,
-		meetingID,
-		attendeePW, 
-		moderatorPW,
-		messageKey,
-		message;
-	protected boolean running,
-		hasBeenForciblyEnded;
-	protected Date startTime,
-		endTime,
-		createTime;
-	protected int participantCount,
-		moderatorCount,
-		maxUsers;
-	protected List<Attendee> attendees = new ArrayList<Attendee>();
-	protected Metadata metadata = new Metadata();
+	private String returncode; 
+	private String meetingName;
+	private String meetingID;
+	private String internalMeetingID;
+	private Date createTime;
+	private int voiceBridge;
+	private String attendeePW; 
+	private String moderatorPW;
+	private boolean running;
+	private boolean recording;
+	private boolean hasBeenForciblyEnded;
+	private Date startTime;
+	private Date endTime;
+	private int participantCount;
+	private int maxUsers;
+	private int moderatorCount;
+	private int listenerCount;
+	private List<Attendee> attendees = new ArrayList<Attendee>();
+	private Metadata metadata = new Metadata();
+	private String messageKey;
+	private String message;
 
 	public Meeting() {
 	}
 
-//	<meetings>
-//	<meeting>
-//		<returncode>SUCCESS</returncode>
-//		<meetingName>English 101</meetingName>
-//		<meetingID>English 101</meetingID>
-//		<createTime>1312994955454</createTime>
-//		<attendeePW>ap</attendeePW>
-//		<moderatorPW>mp</moderatorPW>
-//		<running>true</running>
-//		<hasBeenForciblyEnded>false</hasBeenForciblyEnded>
-//		<startTime>1312994958384</startTime>
-//		<endTime>0</endTime>
-//		<participantCount>1</participantCount>
-//		<maxUsers>20</maxUsers>
-//		<moderatorCount>1</moderatorCount>
-//		<attendees>
-//			<attendee>
-//				<userID>236</userID>
-//				<fullName>fcecagno@gmail.com</fullName>
-//				<role>MODERATOR</role>
-//			</attendee>
-//		</attendees>
-//		<metadata>
-//			<email>fcecagno@gmail.com</email>
-//			<description>Test</description>
-//			<meetingId>English 101</meetingId>
-//		</metadata>
-//		<messageKey></messageKey>
-//		<message></message>
-//	</meeting>
-//</meetings>	
-	public boolean parse(Element elementMeeting) {
+	public boolean parse(Element elementMeeting, boolean check_return_code) {
 		returncode = ParserUtils.getNodeValue(elementMeeting, "returncode");
 		messageKey = ParserUtils.getNodeValue(elementMeeting, "messageKey");
 		message = ParserUtils.getNodeValue(elementMeeting, "message");
 
-		if (!returncode.equals("SUCCESS"))
+		if (check_return_code && !returncode.equals("SUCCESS"))
 			return false;
 		
 		meetingName = ParserUtils.getNodeValue(elementMeeting, "meetingName");
 		meetingID = ParserUtils.getNodeValue(elementMeeting, "meetingID");
+		internalMeetingID = ParserUtils.getNodeValue(elementMeeting, "internalMeetingID");
 		createTime = new Date(Long.parseLong(ParserUtils.getNodeValue(elementMeeting, "createTime", true)));
+		voiceBridge = Integer.parseInt(ParserUtils.getNodeValue(elementMeeting, "voiceBridge", true));
 		attendeePW = ParserUtils.getNodeValue(elementMeeting, "attendeePW");
 		moderatorPW = ParserUtils.getNodeValue(elementMeeting, "moderatorPW");
 		running = Boolean.parseBoolean(ParserUtils.getNodeValue(elementMeeting, "running", true));
+		recording = Boolean.parseBoolean(ParserUtils.getNodeValue(elementMeeting, "recording", true));
 		hasBeenForciblyEnded = Boolean.parseBoolean(ParserUtils.getNodeValue(elementMeeting, "hasBeenForciblyEnded", true));
 		try {
 			startTime = new Date(Long.parseLong(ParserUtils.getNodeValue(elementMeeting, "startTime", true)));
@@ -114,7 +90,8 @@ public class Meeting {
 		participantCount = Integer.parseInt(ParserUtils.getNodeValue(elementMeeting, "participantCount", true));
 		maxUsers = Integer.parseInt(ParserUtils.getNodeValue(elementMeeting, "maxUsers", true));
 		moderatorCount = Integer.parseInt(ParserUtils.getNodeValue(elementMeeting, "moderatorCount", true));
-
+		listenerCount = Integer.parseInt(ParserUtils.getNodeValue(elementMeeting, "listenerCount", true));
+		
 		NodeList nodeAttendees = elementMeeting.getElementsByTagName("attendee");
 		for (int i = 0; i < nodeAttendees.getLength(); ++i) {
 			Attendee attendee = new Attendee();
@@ -139,97 +116,199 @@ public class Meeting {
 			return new Date();
 		}
 	}
-	
+
 	public String getReturncode() {
 		return returncode;
+	}
+
+	public void setReturncode(String returncode) {
+		this.returncode = returncode;
+	}
+
+	public String getMeetingName() {
+		return meetingName;
+	}
+
+	public void setMeetingName(String meetingName) {
+		this.meetingName = meetingName;
 	}
 
 	public String getMeetingID() {
 		return meetingID;
 	}
 
-	public String getAttendeePW() {
-		return attendeePW;
+	public void setMeetingID(String meetingID) {
+		this.meetingID = meetingID;
 	}
 
-	public String getModeratorPW() {
-		return moderatorPW;
+	public String getInternalMeetingID() {
+		return internalMeetingID;
 	}
 
-	public String getMessageKey() {
-		return messageKey;
-	}
-
-	public String getMessage() {
-		return message;
-	}
-
-	public boolean isRunning() {
-		return running;
-	}
-
-	public boolean isHasBeenForciblyEnded() {
-		return hasBeenForciblyEnded;
-	}
-
-	public Date getStartTime() {
-		return startTime;
-	}
-
-	public Date getEndTime() {
-		return endTime;
-	}
-
-	public int getParticipantCount() {
-		return participantCount;
-	}
-
-	public int getModeratorCount() {
-		return moderatorCount;
-	}
-
-	public List<Attendee> getAttendees() {
-		return attendees;
-	}
-
-	public Metadata getMetadata() {
-		return metadata;
-	}
-	
-	public String getMeetingName() {
-		return meetingName;
+	public void setInternalMeetingID(String internalMeetingID) {
+		this.internalMeetingID = internalMeetingID;
 	}
 
 	public Date getCreateTime() {
 		return createTime;
 	}
 
-	public int getMaxUsers() {
-		return maxUsers;
+	public void setCreateTime(Date createTime) {
+		this.createTime = createTime;
+	}
+
+	public int getVoiceBridge() {
+		return voiceBridge;
+	}
+
+	public void setVoiceBridge(int voiceBridge) {
+		this.voiceBridge = voiceBridge;
+	}
+
+	public String getAttendeePW() {
+		return attendeePW;
+	}
+
+	public void setAttendeePW(String attendeePW) {
+		this.attendeePW = attendeePW;
+	}
+
+	public String getModeratorPW() {
+		return moderatorPW;
+	}
+
+	public void setModeratorPW(String moderatorPW) {
+		this.moderatorPW = moderatorPW;
+	}
+
+	public boolean isRunning() {
+		return running;
+	}
+
+	public void setRunning(boolean running) {
+		this.running = running;
+	}
+
+	public boolean isRecording() {
+		return recording;
+	}
+
+	public void setRecording(boolean recording) {
+		this.recording = recording;
+	}
+
+	public boolean isHasBeenForciblyEnded() {
+		return hasBeenForciblyEnded;
+	}
+
+	public void setHasBeenForciblyEnded(boolean hasBeenForciblyEnded) {
+		this.hasBeenForciblyEnded = hasBeenForciblyEnded;
+	}
+
+	public Date getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(Date startTime) {
+		this.startTime = startTime;
+	}
+
+	public Date getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(Date endTime) {
+		this.endTime = endTime;
+	}
+
+	public int getParticipantCount() {
+		return participantCount;
 	}
 
 	public void setParticipantCount(int participantCount) {
 		this.participantCount = participantCount;
 	}
 
+	public int getMaxUsers() {
+		return maxUsers;
+	}
+
+	public void setMaxUsers(int maxUsers) {
+		this.maxUsers = maxUsers;
+	}
+
+	public int getModeratorCount() {
+		return moderatorCount;
+	}
+
 	public void setModeratorCount(int moderatorCount) {
 		this.moderatorCount = moderatorCount;
 	}
 
-	@Override
-	public String toString() {
-		return "Meeting \n     attendeePW=" + attendeePW + "\n     attendees="
-				+ attendees + "\n     createTime=" + createTime
-				+ "\n     endTime=" + endTime + "\n     hasBeenForciblyEnded="
-				+ hasBeenForciblyEnded + "\n     maxUsers=" + maxUsers
-				+ "\n     meetingID=" + meetingID + "\n     meetingName="
-				+ meetingName + "\n     message=" + message
-				+ "\n     messageKey=" + messageKey + "\n     metadata="
-				+ metadata + "\n     moderatorCount=" + moderatorCount
-				+ "\n     moderatorPW=" + moderatorPW
-				+ "\n     participantCount=" + participantCount
-				+ "\n     returncode=" + returncode + "\n     running="
-				+ running + "\n     startTime=" + startTime;
+	public int getListenerCount() {
+		return listenerCount;
 	}
 
+	public void setListenerCount(int listenerCount) {
+		this.listenerCount = listenerCount;
+	}
+
+	public List<Attendee> getAttendees() {
+		return attendees;
+	}
+
+	public void setAttendees(List<Attendee> attendees) {
+		this.attendees = attendees;
+	}
+
+	public Metadata getMetadata() {
+		return metadata;
+	}
+
+	public void setMetadata(Metadata metadata) {
+		this.metadata = metadata;
+	}
+
+	public String getMessageKey() {
+		return messageKey;
+	}
+
+	public void setMessageKey(String messageKey) {
+		this.messageKey = messageKey;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("returncode: ").append(returncode)
+				.append("\nmeetingName: ").append(meetingName)
+				.append("\nmeetingID: ").append(meetingID)
+				.append("\ninternalMeetingID: ").append(internalMeetingID)
+				.append("\ncreateTime: ").append(createTime)
+				.append("\nvoiceBridge: ").append(voiceBridge)
+				.append("\nattendeePW: ").append(attendeePW)
+				.append("\nmoderatorPW: ").append(moderatorPW)
+				.append("\nrunning: ").append(running).append("\nrecording: ")
+				.append(recording).append("\nhasBeenForciblyEnded: ")
+				.append(hasBeenForciblyEnded).append("\nstartTime: ")
+				.append(startTime).append("\nendTime: ").append(endTime)
+				.append("\nparticipantCount: ").append(participantCount)
+				.append("\nmaxUsers: ").append(maxUsers)
+				.append("\nmoderatorCount: ").append(moderatorCount)
+				.append("\nlistenerCount: ").append(listenerCount)
+				.append("\nattendees: ").append(attendees)
+				.append("\nmetadata: ").append(metadata)
+				.append("\nmessageKey: ").append(messageKey)
+				.append("\nmessage: ").append(message);
+		return builder.toString();
+	}
+	
 }

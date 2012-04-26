@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -58,55 +59,48 @@ public class Meetings {
 
 	}
 
-	//.
 	public int parse(String str) throws ParserConfigurationException, UnsupportedEncodingException, SAXException, IOException, DOMException, ParseException {
 		meetings.clear();
+		log.debug("parsing getMeetings response: {}", str);
 
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.parse(new ByteArrayInputStream(str.getBytes("UTF-8")));
 		doc.getDocumentElement().normalize();
 		
-		String returncode;
-		log.debug("parsing: {}", str);
+		Node first_node = doc.getFirstChild();
+		if (first_node == null) {
+			log.error("Parsing a non-XML response for getMeetings");
+			return JoinServiceBase.E_MOBILE_NOT_SUPPORTED;
+		} 
 		
-		try
-		{
-			Element nodeResponse = (Element) doc.getElementsByTagName("meetings").item(0);
-		}
-		catch(NullPointerException e)
-		{
-			//means that the first node is not <meetings> =>  the server doesn't have mobile access
+		boolean check_return_code;
+				
+		if (first_node.getNodeName().equals("meetings")) {
+			log.info("The given response is a mobile getMeetings");
+			check_return_code = true;
+		} else if (first_node.getNodeName().equals("response")) {
+			log.info("The given response is a default getMeetings, or it's an error response");
+			
+			NodeList return_code_list = doc.getElementsByTagName("returncode");
+			if (return_code_list == null || return_code_list.getLength() <= 0 || !return_code_list.item(0).getFirstChild().getNodeValue().equals("SUCCESS"))
+				// there's no return code on the message (it's weird), or it's not success
+				return JoinServiceBase.E_UNKNOWN_ERROR;
+			check_return_code = false;
+		} else {
 			return JoinServiceBase.E_MOBILE_NOT_SUPPORTED;
 		}
-
-		try
-		{
-			returncode = doc.getElementsByTagName("returncode").item(0).getFirstChild().getNodeValue();
-		}
-		catch(NullPointerException e)
-		{
-			//means that the connection is ok, but there's no meeting running at the moment
-			return JoinServiceBase.E_OK;
-		}
-
 		
-		if (returncode.equals("SUCCESS"))
-		{	
-			NodeList nodeMeetings = doc.getElementsByTagName("meeting");
-			// if nodeMeetings.getLength() == 0 and the conference is on, probably the "salt" is wrong
-			log.debug("nodeMeetings.getLength() = {}", nodeMeetings.getLength());
-			for (int i = 0; i < nodeMeetings.getLength(); ++i) {
+		NodeList meetings_node = doc.getElementsByTagName("meeting");
+		if (meetings_node != null) {
+			for (int i = 0; i < meetings_node.getLength(); ++i) {
 				Meeting meeting = new Meeting();
-				if (meeting.parse((Element) nodeMeetings.item(i))) 
-						meetings.add(meeting);				
-				
+				if (meeting.parse((Element) meetings_node.item(i), check_return_code)) 
+					meetings.add(meeting);
 			}
-
-			return JoinServiceBase.E_OK;
 		}
-		else
-			return JoinServiceBase.E_UNKNOWN_ERROR;
+
+		return JoinServiceBase.E_OK;
 	}
 
 	@Override

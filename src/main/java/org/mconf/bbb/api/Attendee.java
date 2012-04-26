@@ -24,14 +24,21 @@ package org.mconf.bbb.api;
 import org.w3c.dom.Element;
 
 public class Attendee {
-	protected String userID,
-		fullName,
-		role;
+	private String userID;
+	private String fullName;
+	private String role;
+	private boolean isPresenter;
+	private boolean hasVideoStream;
+	private String videoStreamName;
 
 	public boolean parse(Element elementAttendee) {
 		userID = ParserUtils.getNodeValue(elementAttendee, "userID");
 		fullName = ParserUtils.getNodeValue(elementAttendee, "fullName");
 		role = ParserUtils.getNodeValue(elementAttendee, "role");
+		isPresenter = Boolean.parseBoolean(ParserUtils.getNodeValue(elementAttendee, "isPresenter", true));
+		hasVideoStream = Boolean.parseBoolean(ParserUtils.getNodeValue(elementAttendee, "hasVideoStream", true));
+		videoStreamName = ParserUtils.getNodeValue(elementAttendee, "videoStreamName");
+		
 		return true;
 	}
 	
@@ -57,6 +64,30 @@ public class Attendee {
 
 	public void setRole(String role) {
 		this.role = role;
+	}
+
+	public boolean isPresenter() {
+		return isPresenter;
+	}
+
+	public void setPresenter(boolean isPresenter) {
+		this.isPresenter = isPresenter;
+	}
+
+	public boolean isHasVideoStream() {
+		return hasVideoStream;
+	}
+
+	public void setHasVideoStream(boolean hasVideoStream) {
+		this.hasVideoStream = hasVideoStream;
+	}
+
+	public String getVideoStreamName() {
+		return videoStreamName;
+	}
+
+	public void setVideoStreamName(String videoStreamName) {
+		this.videoStreamName = videoStreamName;
 	}
 
 	@Override
