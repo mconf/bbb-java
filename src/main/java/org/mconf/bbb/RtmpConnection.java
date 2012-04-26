@@ -11,7 +11,6 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.mconf.bbb.BigBlueButtonClient.OnConnectedListener;
 import org.mconf.bbb.BigBlueButtonClient.OnExceptionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +33,14 @@ public abstract class RtmpConnection extends ClientHandler implements ChannelFut
 	private ChannelFuture future = null;
 	private ChannelFactory factory = null;
 	
-	public boolean connect() {  
-        factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
+	public boolean connect() {
+		if (factory == null)
+			factory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
         bootstrap = new ClientBootstrap(factory);
         bootstrap.setPipelineFactory(pipelineFactory());
         future = bootstrap.connect(new InetSocketAddress(options.getHost(), options.getPort()));
         future.addListener(this);
-    	return true;
+        return true;
     }
 	
 	public void disconnect() {
@@ -59,12 +59,18 @@ public abstract class RtmpConnection extends ClientHandler implements ChannelFut
 	
 	@Override
 	public void operationComplete(ChannelFuture future) throws Exception {
-		if (!future.isSuccess())
-			for (OnConnectedListener listener : context.getConnectedListeners()) {
-				listener.onConnectedUnsuccessfully();
-		}
+		if (future.isSuccess())
+			onConnectedSuccessfully();
+		else
+			onConnectedUnsuccessfully();
 	}	
 	
+	protected void onConnectedUnsuccessfully() {
+	}
+
+	protected void onConnectedSuccessfully() {
+	}
+
 	public BigBlueButtonClient getContext() {
 		return context;
 	}

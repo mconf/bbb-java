@@ -100,6 +100,12 @@ public class MainRtmpConnection extends RtmpConnection {
 			}
 		};
 	}
+
+	@Override
+	protected void onConnectedUnsuccessfully() {
+		for (OnConnectedListener listener : context.getConnectedListeners())
+			listener.onConnectedUnsuccessfully();
+	}
 	
 	@Override
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
