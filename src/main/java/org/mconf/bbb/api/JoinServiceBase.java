@@ -3,6 +3,8 @@ package org.mconf.bbb.api;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.HttpResponse;
@@ -178,9 +180,11 @@ public abstract class JoinServiceBase {
 	}
 	
 	public void setServer(String serverUrl) {
-		if (serverUrl.matches(".*:\\d*")) {
-			this.serverPort = Integer.parseInt(serverUrl.substring(serverUrl.lastIndexOf(":") + 1));
-			this.serverUrl = serverUrl.substring(0, serverUrl.lastIndexOf(":"));
+		Pattern pattern = Pattern.compile("(.*):(\\d*)");
+		Matcher matcher = pattern.matcher(serverUrl);
+		if (matcher.matches()) {
+			this.serverUrl = matcher.group(1);
+			this.serverPort = Integer.parseInt(matcher.group(2));
 		} else {
 			this.serverUrl = serverUrl;
 			this.serverPort = 80;

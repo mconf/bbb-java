@@ -22,6 +22,13 @@ public class JoinServiceProxy {
 	private JoinServiceBase joinService = null;
 	
 	public void setServer(String serverUrl) {
+		if (serverUrl == null)
+			return;
+		
+		serverUrl = serverUrl.toLowerCase();
+		if (!serverUrl.matches("http://(.*)"))
+			serverUrl = "http://" + serverUrl;
+		
 		if (this.serverUrl != null
 				&& this.serverUrl.equals(serverUrl))
 			return;
