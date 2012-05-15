@@ -7,11 +7,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,13 +144,29 @@ public abstract class JoinServiceBase {
 	}
 	
 	public int standardJoin(String joinUrl) {
-		String enterUrl = getFullServerUrl() + "/bigbluebutton/api/enter";
-			
 		joinedMeeting = new JoinedMeeting();
 		try {
 			HttpClient client = new DefaultHttpClient();
-			getUrl(client, joinUrl);
-			String enterResponse = getUrl(client, enterUrl);
+			HttpGet method = new HttpGet(joinUrl);
+			HttpContext context = new BasicHttpContext();
+			HttpResponse httpResponse = client.execute(method, context);
+			if (httpResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
+				log.debug("HTTP GET {} return {}", joinUrl, httpResponse.getStatusLine().getStatusCode());
+			HttpUriRequest currentReq = (HttpUriRequest) context.getAttribute( 
+	                ExecutionContext.HTTP_REQUEST);
+
+			if (!currentReq.getURI().getPath().equals("/client/BigBlueButton.html")) {
+				log.error("It was redirected to {} instead of /client/BigBlueButton.html: the server was branded" +
+						" and the HTML name was changed, or it's an error. However, it will continue processing", currentReq.getURI().getPath());
+			}
+
+			HttpHost currentHost = (HttpHost) context.getAttribute( 
+	                ExecutionContext.HTTP_TARGET_HOST);
+	        String enterUrl = currentHost.toURI() + "/bigbluebutton/api/enter";
+			
+	        // have to modify the answer of the api/enter in case when the join
+	        // message is answered by another host (proxy)
+			String enterResponse = getUrl(client, enterUrl).replace("</response>", "<server>" + currentHost.toURI() + "</server></response>");
 			joinedMeeting.parse(enterResponse);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -216,7 +238,7 @@ public abstract class JoinServiceBase {
 		HttpGet method = new HttpGet(url);
 		HttpResponse httpResponse = client.execute(method);
 		
-		if (httpResponse.getStatusLine().getStatusCode() != 200)
+		if (httpResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
 			log.debug("HTTP GET {} return {}", url, httpResponse.getStatusLine().getStatusCode());
 		
 		return EntityUtils.toString(httpResponse.getEntity()).trim();
