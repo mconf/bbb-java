@@ -27,28 +27,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.flazr.rtmp.RtmpReader;
+import com.flazr.rtmp.RtmpWriter;
 import com.flazr.rtmp.client.ClientOptions;
 import com.flazr.rtmp.message.Audio;
 import com.flazr.util.Utils;
 
 public class BbbVoiceConnection extends VoiceConnection {
-	//private FlvWriter writer; // to record the received audio to a flv file
 	private static final Logger log = LoggerFactory.getLogger(BbbVoiceConnection.class);
 
-	public BbbVoiceConnection(BigBlueButtonClient context, RtmpReader reader) {
+	public BbbVoiceConnection(BigBlueButtonClient context, RtmpReader reader, RtmpWriter writer) {
 		super(null, context);
-		//writer = new FlvWriter("received.flv");
-
 		options = new ClientOptions();
 		options.setClientVersionToUse(Utils.fromHex("00000000"));
 		options.setHost(context.getJoinService().getApplicationService().getServerUrl());
 		options.setAppName("sip");
-		options.publishLive();
+
 		if (reader != null) {
+			options.publishLive();
 			options.setReaderToPublish(reader);
 		}
+		if (writer != null) {
+			options.setWriterToSave(writer);
+		}
 	}
-
+	
 	public void setLoop(boolean loop) {
 		options.setLoop(loop ? Integer.MAX_VALUE : 0);
 	}

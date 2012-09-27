@@ -55,8 +55,9 @@ public abstract class JoinServiceBase {
 		return serverUrl + ":" + serverPort;
 	}
 	
-	public int createMeeting(String meetingID) { //.
+	public int createMeeting(String meetingID) {
 		String createUrl = getFullDemoPath() + getCreateMeetingUrl(meetingID);
+		log.debug("create URL: {}", createUrl);
 		String response = "Unknown error";
 		try {
 			response = getUrl(createUrl);
@@ -67,8 +68,10 @@ public abstract class JoinServiceBase {
 		
 		if (meetingID.equals(response))
 			return E_OK;
-		else
+		else {
+			log.error("create response: {}", response);
 			return E_SERVER_UNREACHABLE;
+		}
 	}
 
 	public int load() { //.

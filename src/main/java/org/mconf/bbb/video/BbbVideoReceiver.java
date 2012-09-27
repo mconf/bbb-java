@@ -69,7 +69,7 @@ public class BbbVideoReceiver {
 		}
 		
 		if (streamName == null) {
-			log.debug("The userId = {} have no stream", userId);
+			log.debug("The userId = {} has no stream", userId);
 			return;
 		}
 		
@@ -110,7 +110,7 @@ public class BbbVideoReceiver {
 		if (streamName != null && streamName.contains(userIdStr)) {
 			/*
 			 * streamName is in this form: 160x1201-13173
-			 * the timestamp doesn't interest, so we drop it
+			 * the timestamp doesn't interest us, so we drop it
 			 */
 			if (streamName.matches("\\d+[x]\\d+[-]\\d+")) {
 				streamName = streamName.substring(0, streamName.indexOf("-"));

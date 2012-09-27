@@ -95,6 +95,11 @@ public abstract class VoiceConnection extends RtmpConnection {
 			ChannelStateEvent e) throws Exception {
 		super.channelDisconnected(ctx, e);
 		log.debug("Rtmp Channel Disconnected");
+		if (options != null) {
+			RtmpReader reader = options.getReaderToPublish();
+			if (reader != null)
+				reader.close();
+		}
 	}
 
     @SuppressWarnings("unchecked")
@@ -128,7 +133,6 @@ public abstract class VoiceConnection extends RtmpConnection {
     
     @Override
     protected void onMultimedia(Channel channel, RtmpMessage message) {
-    	// TODO Auto-generated method stub
     	super.onMultimedia(channel, message);
     	if (message.getHeader().getMessageType() == MessageType.AUDIO) {
     		onAudio((Audio) message);
@@ -154,6 +158,7 @@ public abstract class VoiceConnection extends RtmpConnection {
             if (playStreamId == -1) {
                 playStreamId = ((Double) command.getArg(0)).intValue();
                 log.debug("playStreamId to use: {}", playStreamId);
+                writer = options.getWriterToSave();
                 ClientOptions newOptions = new ClientOptions();
                 newOptions.setStreamName(playName);
                 channel.write(Command.play(playStreamId, newOptions));
