@@ -15,7 +15,5 @@
 	<classpathentry kind="lib" path="/flazr/target/flazr/lib/slf4j-api-1.4.2.jar"/>
 	<classpathentry kind="lib" path="/flazr/target/flazr/lib/slf4j-log4j12-1.4.2.jar"/>
 	<classpathentry kind="lib" path="/flazr/target/flazr/lib/netty-3.2.7.Final.jar"/>
-	<classpathentry exported="true" kind="src" path="/sipdroid"/>
-	<classpathentry exported="true" kind="lib" path="/home/alexandre/mconf-mobile/sipdroid/bin/sipdroid.jar" sourcepath="/sipdroid/src"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

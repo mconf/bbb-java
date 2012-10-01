@@ -23,14 +23,8 @@ package org.mconf.bbb.phone;
 
 import org.mconf.bbb.BigBlueButtonClient;
 import org.mconf.bbb.phone.VoiceConnection;
-import org.sipdroid.codecs.Speex;
-import org.sipdroid.net.RtpPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
 
 import com.flazr.rtmp.RtmpReader;
 import com.flazr.rtmp.client.ClientOptions;
@@ -40,12 +34,6 @@ import com.flazr.util.Utils;
 public class BbbVoiceConnection extends VoiceConnection {
 	//private FlvWriter writer; // to record the received audio to a flv file
 	private static final Logger log = LoggerFactory.getLogger(BbbVoiceConnection.class);
-	Speex speex;
-	int minBufferSize;
-	AudioTrack track;
-	
-	final int BUFFER_SIZE = 1024;
-	
 
 	public BbbVoiceConnection(BigBlueButtonClient context, RtmpReader reader) {
 		super(null, context);
@@ -59,8 +47,6 @@ public class BbbVoiceConnection extends VoiceConnection {
 		if (reader != null) {
 			options.setReaderToPublish(reader);
 		}
-				
-		setCodec();
 	}
 
 	public void setLoop(boolean loop) {
@@ -72,51 +58,11 @@ public class BbbVoiceConnection extends VoiceConnection {
 	}
 
 	public void stop() {
-		track.stop();
-		track.release();
-		speex.close();
 		disconnect();
 	}
 	
 	@Override
 	protected void onAudio(Audio audio) {
-		//log.debug("received audio package: {}", audio.getHeader().getTime());
-		
-		
-		byte[] audioEncoded = audio.getData();
-		log.debug("tamanho array encoded = {}",audioEncoded.length);
-		
-		
-		short[] audioDecoded = new short[1024];		
-		int sizeDecoded = speex.decode(audioEncoded, audioDecoded, audioEncoded.length);
-		log.debug("tamanho array decoded = {}",sizeDecoded);
-		
-		track.write(audioDecoded, 0, sizeDecoded );
-	
+		log.debug("received audio package: {}", audio.getHeader().getTime());
 	}
-	
-	private void setCodec()
-	{
-		speex = new Speex();
-		speex.init();
-		
-		minBufferSize = AudioTrack.getMinBufferSize(speex.samp_rate(), 
-			             							AudioFormat.CHANNEL_CONFIGURATION_MONO, 
-			             							AudioFormat.ENCODING_PCM_16BIT);
-		//int mu = speex.samp_rate()/8000;
-		
-		//if (minBufferSize < 2*2*BUFFER_SIZE*3*mu)
-				//minBufferSize = 2*2*BUFFER_SIZE*3*mu;
-		
-		
-		track = new AudioTrack(AudioManager.STREAM_MUSIC, 
-	  			   speex.samp_rate(), 
-	  			   AudioFormat.CHANNEL_CONFIGURATION_MONO, 
-	  			   AudioFormat.ENCODING_PCM_16BIT,
-	  			   minBufferSize, 
-	  			   AudioTrack.MODE_STREAM);		
-		
-		track.play();	
-	}	
-	
 }
