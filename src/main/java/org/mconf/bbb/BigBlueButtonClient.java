@@ -130,19 +130,19 @@ public class BigBlueButtonClient {
 	}
 
 	public Collection<Participant> getParticipants() {
-		return getUsersModule().getParticipants().values();
+		return usersModule.getParticipants().values();
 	}
 
 	public List<ChatMessage> getPublicChatMessages() {
-		return getChatModule().getPublicChatMessage();
+		return chatModule.getPublicChatMessage();
 	}
 
 	public void sendPrivateChatMessage(String message, int userId) {
-		getChatModule().sendPrivateChatMessage(message, userId);
+		chatModule.sendPrivateChatMessage(message, userId);
 	}
 
 	public void sendPublicChatMessage(String message) {
-		getChatModule().sendPublicChatMessage(message);		
+		chatModule.sendPublicChatMessage(message);
 	}
 
 	public void raiseHand(boolean value) {
@@ -150,35 +150,34 @@ public class BigBlueButtonClient {
 	}
 	
 	public void raiseHand(int userId, boolean value) {
-		getUsersModule().raiseHand(userId, value);
+		usersModule.raiseHand(userId, value);
 	}
 	
 	public void assignPresenter(int userId) {
-		getUsersModule().assignPresenter(userId);
+		usersModule.assignPresenter(userId);
 	}
 
 	public void kickUser(int userId) {
-		getUsersModule().kickUser(userId);
+		usersModule.kickUser(userId);
 	}
 
 	public void kickListener(int listenerId) {
-		getListenersModule().doEjectUser(listenerId);
+		listenersModule.doEjectUser(listenerId);
 	}
 
 	public void muteUnmuteListener(int listenerId, boolean value){
-		getListenersModule().doMuteUnmuteUser(listenerId,value);
+		listenersModule.doMuteUnmuteUser(listenerId,value);
 	}
 
-	public void muteUnmuteRoom(boolean value)
-	{
-		getListenersModule().doMuteAllUsers(value);
+	public void muteUnmuteRoom(boolean value) {
+		listenersModule.doMuteAllUsers(value);
 	}
 
 	public static void main(String[] args) {
 		BigBlueButtonClient client = new BigBlueButtonClient();
 		client.createJoinService("http://test.bigbluebutton.org/", "03b07");
 		client.getJoinService().load();
-		if (  (client.getJoinService().join("English 110", "Eclipse", false) == JoinServiceBase.E_OK) //.
+		if ( (client.getJoinService().join("English 110", "Eclipse", false) == JoinServiceBase.E_OK) //.
 				&& (client.getJoinService().getJoinedMeeting() != null)) {
 			client.connectBigBlueButton();
 		}
