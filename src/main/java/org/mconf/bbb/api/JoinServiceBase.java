@@ -37,6 +37,8 @@ public abstract class JoinServiceBase {
 	public static final int E_SERVER_UNREACHABLE = 10;
 	public static final int E_MOBILE_NOT_SUPPORTED = 11;
 	public static final int E_UNKNOWN_ERROR = 12;
+	public static final int E_CANNOT_GET_CONFIGXML = 13;
+	
 	
 	private static final Logger log = LoggerFactory.getLogger(JoinServiceBase.class);
 
@@ -46,6 +48,7 @@ public abstract class JoinServiceBase {
 	protected Meetings meetings = new Meetings();
 	protected boolean loaded = false;
 	protected ApplicationService appService = null;
+	private BbbServerConfig serverConfig = null;
 	
 	public abstract String getVersion();
 	protected abstract String getCreateMeetingUrl(String meetingID);
@@ -130,7 +133,7 @@ public abstract class JoinServiceBase {
 	}
 
 	private int joinResponse() {
-		if (joinedMeeting.getReturncode().equals("SUCCESS")) {
+		if (joinedMeeting.getReturncode().equals("SUCCESS")) {				
 			if (joinedMeeting.getServer().length() != 0)
 				appService = new ApplicationService(joinedMeeting.getServer());
 			else
@@ -227,6 +230,29 @@ public abstract class JoinServiceBase {
 				return meeting;
 		}
 		return null;
+	}
+	
+	public int setServerConfiguration()
+	{	
+		String configAddress = "http://" + appService.getServerUrl() + ":" + Integer.toString(appService.getServerPort()) + "/client/conf/config.xml";
+		log.debug("\n\n\nTrying to acess {} \n\n\n",configAddress);
+		try 
+		{
+			serverConfig = new BbbServerConfig(getUrl(configAddress));				
+		} 
+		catch (Exception e) 
+		{
+			String errorMessage = "Couldn't get config.xml from " + configAddress;
+			log.error(errorMessage);
+			return E_CANNOT_GET_CONFIGXML;
+		}	
+
+		return E_OK;
+	}
+	
+	public BbbServerConfig getServerConfiguration()
+	{
+		return serverConfig;
 	}
 	
 	protected static String getUrl(String url) throws IOException, ClientProtocolException {
