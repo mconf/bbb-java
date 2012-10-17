@@ -111,14 +111,7 @@ public class MainRtmpConnection extends RtmpConnection {
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
         /*
          * https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/main/model/users/NetConnectionDelegate.as#L102
-         * _netConnection.connect(uri,
-		 *		_conferenceParameters.username, 
-		 *		_conferenceParameters.role, 
-		 *		_conferenceParameters.conference, 
-		 *		_conferenceParameters.room, 
-		 *		_conferenceParameters.voicebridge, 
-		 *		_conferenceParameters.record, 
-		 *		_conferenceParameters.externUserID);
+         * _netConnection.connect(?);
 		 */		
 			
         JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
@@ -133,16 +126,25 @@ public class MainRtmpConnection extends RtmpConnection {
         		meeting.getVoicebridge(), 
         		meeting.getRecord().toLowerCase().equals("true"), 
         		meeting.getExternUserID());
-        else // if (context.getJoinService().getApplicationServer().getServerVersion().equals(ApplicationServer.VERSION_0_8))
+        else if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_8))
             options.setArgs(
         		meeting.getFullname(), 
         		meeting.getRole(), 
         		meeting.getConference(), 
-//        		meeting.getMode(), 
         		meeting.getRoom(), 
         		meeting.getVoicebridge(), 
         		meeting.getRecord().toLowerCase().equals("true"), 
         		meeting.getExternUserID());
+        else
+            options.setArgs(
+				meeting.getFullname(), 
+				meeting.getRole(), 
+				meeting.getConference(), 
+				meeting.getRoom(), 
+				meeting.getVoicebridge(), 
+				meeting.getRecord().toLowerCase().equals("true"), 
+				meeting.getExternUserID(),
+				meeting.getInternalUserID());
 
         writeCommandExpectingResult(e.getChannel(), Command.connect(options));
 	}

@@ -49,6 +49,7 @@ public class JoinedMeeting {
 	private String welcome;
 	private String message;
 	private String server;
+	private String internalUserID;
 
 	public JoinedMeeting() {
 		
@@ -86,6 +87,7 @@ public class JoinedMeeting {
 			confname = ParserUtils.getNodeValue(nodeResponse, "confname");
 			meetingID = ParserUtils.getNodeValue(nodeResponse, "meetingID");
 			externUserID = ParserUtils.getNodeValue(nodeResponse, "externUserID");
+			internalUserID = ParserUtils.getNodeValue(nodeResponse, "internalUserID");
 			role = ParserUtils.getNodeValue(nodeResponse, "role");
 			conference = ParserUtils.getNodeValue(nodeResponse, "conference");
 			room = ParserUtils.getNodeValue(nodeResponse, "room");
@@ -162,13 +164,47 @@ public class JoinedMeeting {
 
 	@Override
 	public String toString() {
-		return "JoinedMeeting [returncode=" + returncode + ", fullname="
-				+ fullname + ", confname=" + confname + ", meetingID="
-				+ meetingID + ", externUserID=" + externUserID + ", role="
-				+ role + ", conference=" + conference + ", room=" + room
-				+ ", voicebridge=" + voicebridge + ", webvoiceconf="
-				+ webvoiceconf + ", mode=" + mode + ", record=" + record
-				+ ", welcome=" + welcome + ", message=" + message + ", server="
-				+ server + "]";
+		StringBuilder builder = new StringBuilder();
+		builder.append("returncode: ");
+		builder.append(returncode);
+		builder.append("\nfullname: ");
+		builder.append(fullname);
+		builder.append("\nconfname: ");
+		builder.append(confname);
+		builder.append("\nmeetingID: ");
+		builder.append(meetingID);
+		builder.append("\nexternUserID: ");
+		builder.append(externUserID);
+		builder.append("\nrole: ");
+		builder.append(role);
+		builder.append("\nconference: ");
+		builder.append(conference);
+		builder.append("\nroom: ");
+		builder.append(room);
+		builder.append("\nvoicebridge: ");
+		builder.append(voicebridge);
+		builder.append("\nwebvoiceconf: ");
+		builder.append(webvoiceconf);
+		builder.append("\nmode: ");
+		builder.append(mode);
+		builder.append("\nrecord: ");
+		builder.append(record);
+		builder.append("\nwelcome: ");
+		builder.append(welcome);
+		builder.append("\nmessage: ");
+		builder.append(message);
+		builder.append("\nserver: ");
+		builder.append(server);
+		builder.append("\ninternalUserID: ");
+		builder.append(internalUserID);
+		return builder.toString();
+	}
+
+	public String getInternalUserID() {
+		return internalUserID;
+	}
+
+	public void setInternalUserID(String internalUserID) {
+		this.internalUserID = internalUserID;
 	}
 }
