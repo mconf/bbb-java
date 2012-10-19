@@ -70,6 +70,11 @@ public class BigBlueButtonClient {
 	public int getMyUserId() {
 		return myUserId;
 	}
+	
+	public Participant getMyself()
+	{
+		return getUsersModule().getParticipants().get(myUserId);
+	}
 
 	public void createChatModule(MainRtmpConnection handler, Channel channel) {
 		chatModule = new ChatModule(handler, channel);

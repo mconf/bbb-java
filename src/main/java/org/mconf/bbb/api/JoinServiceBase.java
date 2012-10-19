@@ -7,11 +7,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +37,8 @@ public abstract class JoinServiceBase {
 	public static final int E_SERVER_UNREACHABLE = 10;
 	public static final int E_MOBILE_NOT_SUPPORTED = 11;
 	public static final int E_UNKNOWN_ERROR = 12;
+	public static final int E_CANNOT_GET_CONFIGXML = 13;
+	
 	
 	private static final Logger log = LoggerFactory.getLogger(JoinServiceBase.class);
 
@@ -40,6 +48,7 @@ public abstract class JoinServiceBase {
 	protected Meetings meetings = new Meetings();
 	protected boolean loaded = false;
 	protected ApplicationService appService = null;
+	private BbbServerConfig serverConfig = null;
 	
 	public abstract String getVersion();
 	protected abstract String getCreateMeetingUrl(String meetingID);
@@ -127,7 +136,7 @@ public abstract class JoinServiceBase {
 	}
 
 	private int joinResponse() {
-		if (joinedMeeting.getReturncode().equals("SUCCESS")) {
+		if (joinedMeeting.getReturncode().equals("SUCCESS")) {				
 			if (joinedMeeting.getServer().length() != 0)
 				appService = new ApplicationService(joinedMeeting.getServer());
 			else
@@ -141,13 +150,29 @@ public abstract class JoinServiceBase {
 	}
 	
 	public int standardJoin(String joinUrl) {
-		String enterUrl = getFullServerUrl() + "/bigbluebutton/api/enter";
-			
 		joinedMeeting = new JoinedMeeting();
 		try {
 			HttpClient client = new DefaultHttpClient();
-			getUrl(client, joinUrl);
-			String enterResponse = getUrl(client, enterUrl);
+			HttpGet method = new HttpGet(joinUrl);
+			HttpContext context = new BasicHttpContext();
+			HttpResponse httpResponse = client.execute(method, context);
+			if (httpResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
+				log.debug("HTTP GET {} return {}", joinUrl, httpResponse.getStatusLine().getStatusCode());
+			HttpUriRequest currentReq = (HttpUriRequest) context.getAttribute( 
+	                ExecutionContext.HTTP_REQUEST);
+
+			if (!currentReq.getURI().getPath().equals("/client/BigBlueButton.html")) {
+				log.error("It was redirected to {} instead of /client/BigBlueButton.html: the server was branded" +
+						" and the HTML name was changed, or it's an error. However, it will continue processing", currentReq.getURI().getPath());
+			}
+
+			HttpHost currentHost = (HttpHost) context.getAttribute( 
+	                ExecutionContext.HTTP_TARGET_HOST);
+	        String enterUrl = currentHost.toURI() + "/bigbluebutton/api/enter";
+			
+	        // have to modify the answer of the api/enter in case when the join
+	        // message is answered by another host (proxy)
+			String enterResponse = getUrl(client, enterUrl).replace("</response>", "<server>" + currentHost.toURI() + "</server></response>");
 			joinedMeeting.parse(enterResponse);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -210,6 +235,29 @@ public abstract class JoinServiceBase {
 		return null;
 	}
 	
+	public int setServerConfiguration()
+	{	
+		String configAddress = "http://" + appService.getServerUrl() + ":" + Integer.toString(appService.getServerPort()) + "/client/conf/config.xml";
+		log.debug("\n\n\nTrying to acess {} \n\n\n",configAddress);
+		try 
+		{
+			serverConfig = new BbbServerConfig(getUrl(configAddress));				
+		} 
+		catch (Exception e) 
+		{
+			String errorMessage = "Couldn't get config.xml from " + configAddress;
+			log.error(errorMessage);
+			return E_CANNOT_GET_CONFIGXML;
+		}	
+
+		return E_OK;
+	}
+	
+	public BbbServerConfig getServerConfiguration()
+	{
+		return serverConfig;
+	}
+	
 	protected static String getUrl(String url) throws IOException, ClientProtocolException {
     	HttpClient client = new DefaultHttpClient();
 		return getUrl(client, url);
@@ -219,7 +267,7 @@ public abstract class JoinServiceBase {
 		HttpGet method = new HttpGet(url);
 		HttpResponse httpResponse = client.execute(method);
 		
-		if (httpResponse.getStatusLine().getStatusCode() != 200)
+		if (httpResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
 			log.debug("HTTP GET {} return {}", url, httpResponse.getStatusLine().getStatusCode());
 		
 		return EntityUtils.toString(httpResponse.getEntity()).trim();

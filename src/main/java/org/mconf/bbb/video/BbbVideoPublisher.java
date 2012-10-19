@@ -70,4 +70,10 @@ public class BbbVideoPublisher {
 		context.getUsersModule().removeStream(streamName);
 		videoConnection.disconnect();
 	}
+
+	public void fireFirstFrame() {
+		if (videoConnection != null) {
+			videoConnection.publisher.fireNext(videoConnection.publisher.channel, 0);
+		}
+	}
 }

@@ -10,6 +10,8 @@ public class MeetingsTest extends TestCase {
 
 	private static final Logger log = LoggerFactory.getLogger(MeetingsTest.class);
 	
+	private static final String MOBILE_RETURN_EMPTY =  "<meetings></meetings>";
+	
 	private static final String MOBILE_RETURN = 
 			"<meetings>" +
 				"<meeting>" +
@@ -45,6 +47,14 @@ public class MeetingsTest extends TestCase {
 					"<message></message>" +
 				"</meeting>" +
 			"</meetings>";
+	
+	private static final String DEFAULT_RETURN_EMPTY = 
+			"<response>" +
+				"<returncode>SUCCESS</returncode>" +
+				"<meetings/>" +
+				"<messageKey>noMeetings</messageKey>" +
+				"<message>no meetings were found on this server</message>" +
+			"</response>";
 	private static final String DEFAULT_RETURN = 
 			"<response>" +
 				"<returncode>SUCCESS</returncode>" +
@@ -78,6 +88,28 @@ public class MeetingsTest extends TestCase {
 		Meetings meetings = new Meetings();
 		try {
 			assertEquals(JoinServiceBase.E_OK, meetings.parse(DEFAULT_RETURN));
+			log.debug(meetings.toString());
+		} catch (Exception e) {
+			fail();
+		}
+	}
+
+	@Test
+	public void testMobileApiEmpty() {
+		Meetings meetings = new Meetings();
+		try {
+			assertEquals(JoinServiceBase.E_OK, meetings.parse(MOBILE_RETURN_EMPTY));
+			log.debug(meetings.toString());
+		} catch (Exception e) {
+			fail();
+		}
+	}
+
+	@Test
+	public void testDefaultApiEmpty() {
+		Meetings meetings = new Meetings();
+		try {
+			assertEquals(JoinServiceBase.E_OK, meetings.parse(DEFAULT_RETURN_EMPTY));
 			log.debug(meetings.toString());
 		} catch (Exception e) {
 			fail();

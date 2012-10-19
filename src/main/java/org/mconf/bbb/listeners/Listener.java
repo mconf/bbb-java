@@ -2,9 +2,11 @@ package org.mconf.bbb.listeners;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class Listener implements IListener {
 	private int userId;
+	private int participantId;
 	private String cidName;
 	private String cidNum;
 	private boolean muted;
@@ -15,15 +17,16 @@ public class Listener implements IListener {
 	
 	public Listener(List<?> params) {
 		userId = ((Double) params.get(0)).intValue();
-		cidName = (String) params.get(1);
+		nameAndIdSetting( (String) params.get(1) );
 		cidNum = (String) params.get(2);
 		muted = (Boolean) params.get(3);
 		talking = (Boolean) params.get(4);
 		locked = (Boolean) params.get(5);
 	}
+
 	public Listener(Map<String, Object> attributes) {
 		userId = ((Double) attributes.get("participant")).intValue();
-		cidName = (String) attributes.get("name");
+		nameAndIdSetting((String) attributes.get("name"));
 		talking = (Boolean) attributes.get("talking");					
 		muted = (Boolean) attributes.get("muted");					
 		locked = (Boolean) attributes.get("locked");
@@ -120,5 +123,31 @@ public class Listener implements IListener {
 		return "Listener [cidName=" + cidName + ", cidNum=" + cidNum
 				+ ", locked=" + locked + ", muted=" + muted + ", talking="
 				+ talking + ", userId=" + userId + "]";
+	}
+	
+	/**
+	 * @return the participantId
+	 */
+	public int getParticipantId() {
+		return participantId;
+	}
+
+	/**
+	 * @param participantId the participantId to set
+	 */
+	public void setParticipantId(int participantId) {
+		this.participantId = participantId;
+	}
+
+	private void nameAndIdSetting(String nameAndId) {
+		if( Pattern.matches("\\d+\\-\\w+(\\s+\\w+)*", nameAndId)) {
+			participantId = Integer.parseInt(nameAndId.split("-")[0]);
+			cidName = nameAndId.split("-")[1];
+		}
+		else {
+			participantId = -1;
+			cidName = nameAndId;
+		}
+		
 	}
 }

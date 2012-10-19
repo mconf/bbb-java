@@ -21,6 +21,9 @@
 
 package org.mconf.bbb.video;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.mconf.bbb.BigBlueButtonClient;
 import org.mconf.bbb.users.Participant;
 import org.slf4j.Logger;
@@ -108,24 +111,39 @@ public class BbbVideoReceiver {
 	public static float getAspectRatio(int userId, String streamName) {
 		String userIdStr = Integer.toString(userId);
 		if (streamName != null && streamName.contains(userIdStr)) {
+			
 			/*
-			 * streamName is in this form: 160x1201-13173
-			 * the timestamp doesn't interest us, so we drop it
+			 * 	0.7 -> 120x1601
+			 * 	0.8 -> 120x1601-131292666
+			 * 	0.81 -> 120x160-1-131292666
 			 */
-			if (streamName.matches("\\d+[x]\\d+[-]\\d+")) {
-				streamName = streamName.substring(0, streamName.indexOf("-"));
-			}
+			
 			/*
-			 * streamName is in this form: 160x1201
-			 * remove the userId and get the dimensions
+			 * 0.81 stream name format
 			 */
-			if (streamName.matches("\\d+[x]\\d+")) {
-				String resStr = streamName.substring(0, streamName.lastIndexOf(userIdStr));
-				String[] res = resStr.split("x");
-				int width = Integer.parseInt(res[0]), 
-					height = Integer.parseInt(res[1]);
+			Pattern streamNamePattern = Pattern.compile("(\\d+)[x](\\d+)[-]\\d+[-]\\d+");
+			Matcher matcher = streamNamePattern.matcher(streamName);
+			if( matcher.matches() ) {
+				String widthStr = matcher.group(1);
+				String heightStr = matcher.group(2);
+				int width = Integer.parseInt(widthStr);
+				int height = Integer.parseInt(heightStr);
 				return width / (float) height;
 			}
+			
+			/*
+			 * 0.7 or 0.8 stream name format
+			 */
+			streamNamePattern = Pattern.compile("(\\d+)[x](\\d+)([-]\\d+)?");
+			matcher = streamNamePattern.matcher(streamName);
+			if( matcher.matches() ) {				
+				String widthStr = matcher.group(1);
+				String heightAndId = matcher.group(2);
+				String heightStr = heightAndId.substring(0, heightAndId.lastIndexOf(userIdStr));
+				int width = Integer.parseInt(widthStr);
+				int height = Integer.parseInt(heightStr);				
+				return width / (float) height;
+			}			
 		}		
 		return -1;
 	}
