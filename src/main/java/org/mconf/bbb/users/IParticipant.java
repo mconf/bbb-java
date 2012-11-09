@@ -31,9 +31,9 @@ public interface IParticipant {
 
 	public abstract void setName(String name);
 
-	public abstract int getUserId();
+	public abstract String getUserId();
 
-	public abstract void setUserId(int userid);
+	public abstract void setUserId(String userid);
 
 	public abstract String getRole();
 

@@ -51,11 +51,11 @@ public class BbbVideoReceiver {
 	
 	private static final Logger log = LoggerFactory.getLogger(BbbVideoReceiver.class);
 
-	private int userId;
+	private String userId;
 	private String streamName;
 	private VideoConnection videoConnection;
 	
-	public BbbVideoReceiver(int userId, BigBlueButtonClient context) {
+	public BbbVideoReceiver(String userId, BigBlueButtonClient context) {
 		this.userId = userId;
 
 		ClientOptions opt = new ClientOptions();
@@ -65,7 +65,7 @@ public class BbbVideoReceiver {
 		
 		streamName = null;
 		for (Participant p : context.getParticipants()) {
-			if (p.getUserId() == userId && p.hasStream()) {
+			if (p.getUserId().equals(userId) && p.hasStream()) {
 				streamName = p.getStatus().getStreamName();
 				break;
 			}
@@ -96,7 +96,7 @@ public class BbbVideoReceiver {
 			videoConnection.disconnect();
 	}
 	
-	public int getUserId() {
+	public String getUserId() {
 		return userId;
 	}
 	
@@ -108,9 +108,8 @@ public class BbbVideoReceiver {
 		return getAspectRatio(userId, streamName);
 	}
 	
-	public static float getAspectRatio(int userId, String streamName) {
-		String userIdStr = Integer.toString(userId);
-		if (streamName != null && streamName.contains(userIdStr)) {
+	public static float getAspectRatio(String userId, String streamName) {
+		if (streamName != null && streamName.contains(userId)) {
 			
 			/*
 			 * 	0.7 -> 120x1601
@@ -139,7 +138,7 @@ public class BbbVideoReceiver {
 			if( matcher.matches() ) {				
 				String widthStr = matcher.group(1);
 				String heightAndId = matcher.group(2);
-				String heightStr = heightAndId.substring(0, heightAndId.lastIndexOf(userIdStr));
+				String heightStr = heightAndId.substring(0, heightAndId.lastIndexOf(userId));
 				int width = Integer.parseInt(widthStr);
 				int height = Integer.parseInt(heightStr);				
 				return width / (float) height;

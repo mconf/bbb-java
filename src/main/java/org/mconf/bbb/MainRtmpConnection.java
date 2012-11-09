@@ -21,6 +21,8 @@
 
 package org.mconf.bbb;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.netty.channel.Channel;
@@ -109,44 +111,31 @@ public class MainRtmpConnection extends RtmpConnection {
 	
 	@Override
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-        /*
-         * https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/main/model/users/NetConnectionDelegate.as#L102
-         * _netConnection.connect(?);
+		/*
+		 * https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/main/model/users/NetConnectionDelegate.as#L102
+		 * _netConnection.connect(?);
 		 */		
 			
-        JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
-        options.setArgs((Object[]) null);
-        if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_7))
-            options.setArgs(
-        		meeting.getFullname(), 
-        		meeting.getRole(), 
-        		meeting.getConference(), 
-        		meeting.getMode(), 
-        		meeting.getRoom(), 
-        		meeting.getVoicebridge(), 
-        		meeting.getRecord().toLowerCase().equals("true"), 
-        		meeting.getExternUserID());
-        else if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_8))
-            options.setArgs(
-        		meeting.getFullname(), 
-        		meeting.getRole(), 
-        		meeting.getConference(), 
-        		meeting.getRoom(), 
-        		meeting.getVoicebridge(), 
-        		meeting.getRecord().toLowerCase().equals("true"), 
-        		meeting.getExternUserID());
-        else
-            options.setArgs(
-				meeting.getFullname(), 
-				meeting.getRole(), 
-				meeting.getConference(), 
-				meeting.getRoom(), 
-				meeting.getVoicebridge(), 
-				meeting.getRecord().toLowerCase().equals("true"), 
-				meeting.getExternUserID(),
-				meeting.getInternalUserID());
-
-        writeCommandExpectingResult(e.getChannel(), Command.connect(options));
+		JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
+		options.setArgs((Object[]) null);
+		
+		List<Object> args = new ArrayList<Object>();
+		args.add(meeting.getFullname());
+		args.add(meeting.getRole());
+		args.add(meeting.getConference());
+		if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_7))
+			args.add(meeting.getMode());
+		args.add(meeting.getRoom());
+		args.add(meeting.getVoicebridge());
+		args.add(meeting.doRecord());
+		args.add(meeting.getExternUserID());
+		args.add(meeting.getInternalUserID());
+		if (meeting.isGuestDefined())
+			args.add(meeting.isGuest());
+		
+		options.setArgs(args.toArray());
+		
+		writeCommandExpectingResult(e.getChannel(), Command.connect(options));
 	}
 	
 	@Override
@@ -172,7 +161,7 @@ public class MainRtmpConnection extends RtmpConnection {
     
     public boolean onGetMyUserId(String resultFor, Command command) {
     	if (resultFor.equals("getMyUserId")) {
-	    	context.setMyUserId(Integer.parseInt((String) command.getArg(0)));
+	    	context.setMyUserId((String) command.getArg(0));
 
 			connected = true;
 			for (OnConnectedListener l : context.getConnectedListeners())

@@ -51,7 +51,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	private final IClientSharedObject publicChatSO, privateChatSO;
 
 	private List<ChatMessage> publicChatMessages = Collections.synchronizedList(new ArrayList<ChatMessage>());
-	private Map<Integer, List<ChatMessage>> privateChatMessages = new ConcurrentHashMap<Integer, List<ChatMessage>>();
+	private Map<String, List<ChatMessage>> privateChatMessages = new ConcurrentHashMap<String, List<ChatMessage>>();
 	
 	public final static int MESSAGE_ENCODING_UNKNOWN = -1;
 	public final static int MESSAGE_ENCODING_STRING = 0;
@@ -70,7 +70,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		publicChatSO.addSharedObjectListener(this);
 		publicChatSO.connect(channel);
 		
-		privateChatSO = handler.getSharedObject(Integer.toString(handler.getContext().getMyUserId()), false);
+		privateChatSO = handler.getSharedObject(handler.getContext().getMyUserId(), false);
 		privateChatSO.addSharedObjectListener(this);
 		privateChatSO.connect(channel);
 	}
@@ -234,7 +234,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		return publicChatMessages;
 	}
 	
-	public Map<Integer, List<ChatMessage>> getPrivateChatMessage() {
+	public Map<String, List<ChatMessage>> getPrivateChatMessage() {
 		return privateChatMessages;
 	}
 

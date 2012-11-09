@@ -50,6 +50,8 @@ public class JoinedMeeting {
 	private String message;
 	private String server;
 	private String internalUserID;
+	// guest is a new feature added on Mconf-Live 0.2
+	private String guest;
 
 	public JoinedMeeting() {
 		
@@ -97,6 +99,7 @@ public class JoinedMeeting {
 			record = ParserUtils.getNodeValue(nodeResponse, "record");
 			welcome = ParserUtils.getNodeValue(nodeResponse, "welcome");
 			server = ParserUtils.getNodeValue(nodeResponse, "server");
+			guest = ParserUtils.getNodeValue(nodeResponse, "guest");
 		} else {
 			message = ParserUtils.getNodeValue(nodeResponse, "message");
 		}
@@ -146,8 +149,8 @@ public class JoinedMeeting {
 		return mode;
 	}
 
-	public String getRecord() {
-		return record;
+	public boolean doRecord() {
+		return record.equalsIgnoreCase("true");
 	}
 
 	public String getWelcome() {
@@ -160,6 +163,14 @@ public class JoinedMeeting {
 	
 	public String getServer() {
 		return server;
+	}
+
+	public boolean isGuestDefined() {
+		return guest.length() > 0;
+	}
+	
+	public boolean isGuest() {
+		return guest.equalsIgnoreCase("true");
 	}
 
 	@Override

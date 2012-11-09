@@ -43,7 +43,7 @@ public class ChatMessage {
 	private String color;
 	private String time;
 	private String language;
-	private int userid;
+	private String userId;
 	
 	public ChatMessage() {
 		color = "0";
@@ -65,7 +65,7 @@ public class ChatMessage {
 		color = (String) obj.get("color");
 		time = (String) obj.get("time");
 		language = (String) obj.get("language");
-		userid = Integer.parseInt((String) obj.get("userid"));
+		userId = (String) obj.get("userid");
 
 		ChatModule.MESSAGE_ENCODING = ChatModule.MESSAGE_ENCODING_TYPED_OBJECT;
 	}
@@ -77,7 +77,7 @@ public class ChatMessage {
 
 		Collections.reverse(param);
 		
-		userid = Double.valueOf(Double.parseDouble(param.get(0))).intValue();
+		userId = param.get(0);
 		language = param.get(1);
 		time = param.get(2);
 		color = param.get(3);
@@ -100,7 +100,7 @@ public class ChatMessage {
 		obj.put("color", color);
 		obj.put("time", time);
 		obj.put("language", language);
-		obj.put("userid", Integer.toString(userid));
+		obj.put("userid", userId);
 		obj.put("classname", "org.bigbluebutton.conference.service.chat.ChatObject");
 		return obj;
 	}
@@ -117,7 +117,7 @@ public class ChatMessage {
 			.append("|")
 			.append(language)
 			.append("|")
-			.append(userid);
+			.append(userId);
 		return sb.toString();
 	}
 
@@ -161,19 +161,19 @@ public class ChatMessage {
 		this.language = language;
 	}
 
-	public int getUserId() {
-		return userid;
+	public String getUserId() {
+		return userId;
 	}
 
-	public void setUserId(int userid) {
-		this.userid = userid;
+	public void setUserId(String userid) {
+		this.userId = userid;
 	}
 
 	@Override
 	public String toString() {
 		return "ChatMessage [color=" + color + ", language=" + language
 				+ ", message=" + message + ", time=" + time + ", userid="
-				+ userid + ", username=" + username + "]";
+				+ userId + ", username=" + username + "]";
 	}
 	
 }

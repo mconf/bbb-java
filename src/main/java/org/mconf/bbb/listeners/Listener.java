@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 public class Listener implements IListener {
 	private int userId;
-	private int participantId;
+	private String participantId;
 	private String cidName;
 	private String cidNum;
 	private boolean muted;
@@ -128,24 +128,24 @@ public class Listener implements IListener {
 	/**
 	 * @return the participantId
 	 */
-	public int getParticipantId() {
+	public String getParticipantId() {
 		return participantId;
 	}
 
 	/**
 	 * @param participantId the participantId to set
 	 */
-	public void setParticipantId(int participantId) {
+	public void setParticipantId(String participantId) {
 		this.participantId = participantId;
 	}
 
 	private void nameAndIdSetting(String nameAndId) {
 		if( Pattern.matches("\\d+\\-\\w+(\\s+\\w+)*", nameAndId)) {
-			participantId = Integer.parseInt(nameAndId.split("-")[0]);
+			participantId = nameAndId.split("-")[0];
 			cidName = nameAndId.split("-")[1];
 		}
 		else {
-			participantId = -1;
+			participantId = "nil";
 			cidName = nameAndId;
 		}
 		

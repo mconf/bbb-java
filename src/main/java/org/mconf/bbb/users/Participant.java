@@ -27,7 +27,7 @@ public class Participant implements IParticipant {
 
 	private Status status;
 	private String name;
-	private int userid;
+	private String userid;
 	private String role;
 	
 	// listener stuff
@@ -52,7 +52,11 @@ public class Participant implements IParticipant {
 	public void decode(Map<String, Object> param, String appServerVersion) {
 		status = new Status((Map<String, Object>) param.get("status"), appServerVersion);
 		name = (String) param.get("name");
-		userid = ((Double) param.get("userid")).intValue();
+		Object obj = param.get("userid");
+		if (obj.getClass() == Double.class)
+			userid = ((Double) obj).toString();
+		else if (obj.getClass() == String.class)
+			userid = (String) obj;
 		role = (String) param.get("role");
 	}
 
@@ -92,7 +96,7 @@ public class Participant implements IParticipant {
 	 * @see org.mconf.bbb.users.IParticipant#getUserId()
 	 */
 	@Override
-	public int getUserId() {
+	public String getUserId() {
 		return userid;
 	}
 
@@ -100,7 +104,7 @@ public class Participant implements IParticipant {
 	 * @see org.mconf.bbb.users.IParticipant#setUserId(int)
 	 */
 	@Override
-	public void setUserId(int userid) {
+	public void setUserId(String userid) {
 		this.userid = userid;
 	}
 

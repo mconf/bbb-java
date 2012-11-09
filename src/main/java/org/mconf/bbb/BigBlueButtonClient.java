@@ -53,12 +53,12 @@ public class BigBlueButtonClient {
 
 	private JoinServiceProxy joinServiceProxy = new JoinServiceProxy();
 
-	private int myUserId = -1;
+	private String myUserId = null;
 	private ChatModule chatModule = null;
 	private UsersModule usersModule = null;
 	private ListenersModule listenersModule = null;
 
-	public void setMyUserId(int myUserId) {
+	public void setMyUserId(String myUserId) {
 		this.myUserId = myUserId;
 		log.info("My userID is {}", myUserId);
 	}
@@ -67,7 +67,7 @@ public class BigBlueButtonClient {
 		return mainConnection;
 	}
 
-	public int getMyUserId() {
+	public String getMyUserId() {
 		return myUserId;
 	}
 	
@@ -154,7 +154,7 @@ public class BigBlueButtonClient {
 		raiseHand(myUserId, value);
 	}
 	
-	public void raiseHand(int userId, boolean value) {
+	public void raiseHand(String userId, boolean value) {
 		usersModule.raiseHand(userId, value);
 	}
 	
@@ -212,7 +212,7 @@ public class BigBlueButtonClient {
 	
 	public interface OnPublicChatMessageListener extends IBbbListener {
 		public void onPublicChatMessage(ChatMessage message, IParticipant source);
-		public void onPublicChatMessage(List<ChatMessage> publicChatMessages, Map<Integer, Participant> participants);
+		public void onPublicChatMessage(List<ChatMessage> publicChatMessages, Map<String, Participant> participants);
 	}
 	public interface OnPrivateChatMessageListener extends IBbbListener {
 		public void onPrivateChatMessage(ChatMessage message, IParticipant source);

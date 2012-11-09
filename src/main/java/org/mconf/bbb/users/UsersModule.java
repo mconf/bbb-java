@@ -49,7 +49,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	private final IClientSharedObject participantsSO;
 
-	private Map<Integer, Participant> participants = new ConcurrentHashMap<Integer, Participant>();
+	private Map<String, Participant> participants = new ConcurrentHashMap<String, Participant>();
 	private int moderatorCount = 0, participantCount = 0;
 	private String joinServiceVersion;
 
@@ -93,7 +93,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		if (so.equals(participantsSO)) {
 			if (method.equals("kickUserCallback")) {
 				IParticipant p = participants.get(((Double) params.get(0)).intValue());
-				if (p.getUserId() == handler.getContext().getMyUserId()) {
+				if (p.getUserId().equals(handler.getContext().getMyUserId())) {
 					for (OnKickUserListener l : handler.getContext().getKickUserListeners())
 						l.onKickMyself();
 					channel.close();
@@ -123,8 +123,15 @@ public class UsersModule extends Module implements ISharedObjectListener {
 				return;
 			}
 			if (method.equals("participantStatusChange")) {
-				Participant p = participants.get(((Double) params.get(0)).intValue());
-				onParticipantStatusChange(p, (String) params.get(1), params.get(2));
+				Participant p = null;
+				Object param = params.get(0);
+				if (param.getClass() == Double.class)
+					p = participants.get(((Double) params.get(0)).intValue());
+				else if (param.getClass() == String.class)
+					p = participants.get(params.get(0));
+				
+				if (p != null)
+					onParticipantStatusChange(p, (String) params.get(1), params.get(2));
 				return;
 			}
 		}
@@ -182,7 +189,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		return false;
 	}
 
-	public Map<Integer, Participant> getParticipants() {
+	public Map<String, Participant> getParticipants() {
 		return participants;
 	}
 
@@ -217,7 +224,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		}
 	}
 
-	public void raiseHand(int userId, boolean value) {
+	public void raiseHand(String userId, boolean value) {
 		Command cmd = new CommandAmf0("participants.setParticipantStatus", null, userId, "raiseHand", value);
 		handler.writeCommandExpectingResult(channel, cmd);
 	}
@@ -229,7 +236,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		// as it's implemented on bigbluebutton-client/src/org/bigbluebutton/modules/present/business/PresentSOService.as:353
 		Participant p = participants.get(userId);
 		if (p == null) {
-			log.debug("Inconsistent state here");
+			log.warn("Inconsistent state here");
 			return;
 		}
 		
