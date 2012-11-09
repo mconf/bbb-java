@@ -35,6 +35,7 @@ import org.mconf.bbb.MainRtmpConnection;
 import org.mconf.bbb.Module;
 import org.mconf.bbb.api.ApplicationService;
 import org.mconf.bbb.users.IParticipant;
+import org.mconf.bbb.users.UsersModule;
 import org.red5.server.api.IAttributeStore;
 import org.red5.server.api.so.IClientSharedObject;
 import org.red5.server.api.so.ISharedObjectBase;
@@ -118,8 +119,8 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		if (so.equals(privateChatSO)) {
 			if (method.equals("messageReceived") && params != null) {
 				// example: [97, oi|Felipe|0|14:35|en|97]
-				int userid = Integer.parseInt((String) params.get(0));
-				onPrivateChatMessage(new ChatMessage(params.get(1)), handler.getContext().getUsersModule().getParticipants().get(userid));
+				String userId = UsersModule.getUserIdFromObject(params.get(0));
+				onPrivateChatMessage(new ChatMessage(params.get(1)), handler.getContext().getUsersModule().getParticipants().get(userId));
 				return;
 			}
 		}
@@ -194,12 +195,13 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	 * @param message
 	 * @param userid
 	 */
-	public void sendPrivateChatMessage(String message, int userid) {
+	public void sendPrivateChatMessage(String message, String userid) {
 		ChatMessage chatMessage = new ChatMessage();
 		chatMessage.setMessage(message);
 		chatMessage.setUsername(handler.getContext().getJoinService().getJoinedMeeting().getFullname());
 		chatMessage.setUserId(handler.getContext().getMyUserId());
 		
+		// \TODO the userId is being passed as Double, but should be passed as String on BigBlueButton 0.81
     	Command command = new CommandAmf0("chat.privateMessage", null, chatMessage.encode(), Double.valueOf(handler.getContext().getMyUserId()), Double.valueOf(userid));
     	handler.writeCommandExpectingResult(channel, command);
 

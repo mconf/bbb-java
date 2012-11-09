@@ -162,7 +162,7 @@ public abstract class JoinServiceBase {
 	                ExecutionContext.HTTP_REQUEST);
 
 			if (!currentReq.getURI().getPath().equals("/client/BigBlueButton.html")) {
-				log.error("It was redirected to {} instead of /client/BigBlueButton.html: the server was branded" +
+				log.warn("It was redirected to {} instead of /client/BigBlueButton.html: the server was branded" +
 						" and the HTML name was changed, or it's an error. However, it will continue processing", currentReq.getURI().getPath());
 			}
 
@@ -238,15 +238,14 @@ public abstract class JoinServiceBase {
 	public int setServerConfiguration()
 	{	
 		String configAddress = "http://" + appService.getServerUrl() + ":" + Integer.toString(appService.getServerPort()) + "/client/conf/config.xml";
-		log.debug("\n\n\nTrying to acess {} \n\n\n",configAddress);
+		log.debug("Trying to fetch {}", configAddress);
 		try 
 		{
 			serverConfig = new BbbServerConfig(getUrl(configAddress));				
 		} 
 		catch (Exception e) 
 		{
-			String errorMessage = "Couldn't get config.xml from " + configAddress;
-			log.error(errorMessage);
+			log.error("Couldn't get config.xml");
 			return E_CANNOT_GET_CONFIGXML;
 		}	
 

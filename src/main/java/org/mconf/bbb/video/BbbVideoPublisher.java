@@ -33,16 +33,14 @@ import com.flazr.util.Utils;
 public class BbbVideoPublisher {
 	private static final Logger log = LoggerFactory.getLogger(BbbVideoPublisher.class);
 
-	/* static */private VideoPublisherConnection videoConnection = null;
+	private VideoPublisherConnection videoConnection = null;
 	private String streamName;
 	private BigBlueButtonClient context;
 	private ClientOptions opt;
-//	private RtmpReader reader;
 	
 	public BbbVideoPublisher(BigBlueButtonClient context, RtmpReader reader, String streamName) {
 		this.context = context;
 		this.streamName = streamName;
-//		this.reader = reader;
 
 		opt = new ClientOptions();
 		opt.setClientVersionToUse(Utils.fromHex("00000000"));
@@ -63,12 +61,15 @@ public class BbbVideoPublisher {
 			videoConnection = new VideoPublisherConnection(opt, context);
 			videoConnection.connect();
 		}
-//		videoConnection.addPublishStream(streamName, reader);
 	}
 	
 	public void stop() {
 		context.getUsersModule().removeStream(streamName);
-		videoConnection.disconnect();
+		// when the stream is removed from the users module, the client automatically
+		// receives a NetStream.Unpublish.Success, then the channel is closed
+		// \TODO it's may create a memory leak, check it
+		//videoConnection.disconnect();
+		videoConnection = null;
 	}
 
 	public void fireFirstFrame() {

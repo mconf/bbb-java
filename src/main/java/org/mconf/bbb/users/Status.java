@@ -59,7 +59,7 @@ public class Status {
 		this.raiseHand = raiseHand;
 	}
 
-	public boolean isHasStream() {
+	public boolean doesHaveStream() {
 		return hasStream;
 	}
 

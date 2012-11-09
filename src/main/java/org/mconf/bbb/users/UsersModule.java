@@ -92,8 +92,8 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 		if (so.equals(participantsSO)) {
 			if (method.equals("kickUserCallback")) {
-				IParticipant p = participants.get(((Double) params.get(0)).intValue());
-				if (p.getUserId().equals(handler.getContext().getMyUserId())) {
+				IParticipant p = getParticipant(params.get(0));
+				if (handler.getContext().isMyself(p.getUserId())) {
 					for (OnKickUserListener l : handler.getContext().getKickUserListeners())
 						l.onKickMyself();
 					channel.close();
@@ -103,9 +103,12 @@ public class UsersModule extends Module implements ISharedObjectListener {
 				return;
 			}
 			if (method.equals("participantLeft")) {
-				IParticipant p = participants.get(((Double) params.get(0)).intValue());
-				for (OnParticipantLeftListener l : handler.getContext().getParticipantLeftListeners())
-					l.onParticipantLeft(p);
+				IParticipant p = getParticipant(params.get(0));
+				
+				synchronized (handler.getContext().getParticipantLeftListeners()) {
+					for (OnParticipantLeftListener l : handler.getContext().getParticipantLeftListeners())
+						l.onParticipantLeft(p);
+				}
 
 				if(p.getRole().equals("MODERATOR"))
 					moderatorCount--;
@@ -123,18 +126,30 @@ public class UsersModule extends Module implements ISharedObjectListener {
 				return;
 			}
 			if (method.equals("participantStatusChange")) {
-				Participant p = null;
-				Object param = params.get(0);
-				if (param.getClass() == Double.class)
-					p = participants.get(((Double) params.get(0)).intValue());
-				else if (param.getClass() == String.class)
-					p = participants.get(params.get(0));
+				Participant p = getParticipant(params.get(0));
 				
 				if (p != null)
 					onParticipantStatusChange(p, (String) params.get(1), params.get(2));
 				return;
 			}
 		}
+	}
+	
+	static public String getUserIdFromObject(Object param) {
+		if (param.getClass() == Double.class)
+			return Integer.toString(((Double) param).intValue());
+		else if (param.getClass() == String.class)
+			return (String) param;
+		else
+			return null;
+	}
+	
+	private Participant getParticipant(Object param) {
+		String userId = getUserIdFromObject(param);
+		if (userId != null)
+			return participants.get(userId);
+		else
+			return null;
 	}
 
 	@Override
@@ -229,10 +244,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		handler.writeCommandExpectingResult(channel, cmd);
 	}
 
-	/*
-	 * \TODO should be moved to the presentation module in the near future
-	 */
-	public void assignPresenter(int userId) {
+	public void assignPresenter(String userId) {
 		// as it's implemented on bigbluebutton-client/src/org/bigbluebutton/modules/present/business/PresentSOService.as:353
 		Participant p = participants.get(userId);
 		if (p == null) {
@@ -277,8 +289,8 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		}
 	}
 
-	public void kickUser(int userId) {
-		if (handler.getContext().getUsersModule().getParticipants().get(handler.getContext().getMyUserId()).isModerator()) {
+	public void kickUser(String userId) {
+		if (handler.getContext().getMyself().isModerator()) {
 			List<Object> list = new ArrayList<Object>();
 			list.add(userId);
 			participantsSO.sendMessage("kickUserCallback", list);

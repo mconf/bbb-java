@@ -52,11 +52,7 @@ public class Participant implements IParticipant {
 	public void decode(Map<String, Object> param, String appServerVersion) {
 		status = new Status((Map<String, Object>) param.get("status"), appServerVersion);
 		name = (String) param.get("name");
-		Object obj = param.get("userid");
-		if (obj.getClass() == Double.class)
-			userid = ((Double) obj).toString();
-		else if (obj.getClass() == String.class)
-			userid = (String) obj;
+		userid = UsersModule.getUserIdFromObject(param.get("userid"));
 		role = (String) param.get("role");
 	}
 
@@ -150,7 +146,7 @@ public class Participant implements IParticipant {
 	
 	
 	public boolean hasStream() {
-		return status.isHasStream();
+		return status.doesHaveStream();
 	}
 	
 	public void setHasStream(boolean hasStream) {

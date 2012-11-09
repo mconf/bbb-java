@@ -47,7 +47,8 @@ public abstract class RtmpConnection extends ClientHandler implements ChannelFut
 		if (future != null) {
 			if (future.getChannel().isConnected()) {
 				log.debug("Channel is connected, disconnecting");
-				future.getChannel().close(); //ClosedChannelException
+				//future.getChannel().close(); //ClosedChannelException
+				future.getChannel().disconnect();
 				future.getChannel().getCloseFuture().awaitUninterruptibly();
 			}
 			future.removeListener(this);

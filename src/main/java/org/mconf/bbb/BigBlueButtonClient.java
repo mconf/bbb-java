@@ -71,6 +71,10 @@ public class BigBlueButtonClient {
 		return myUserId;
 	}
 	
+	public boolean isMyself(String userId) {
+		return myUserId.equals(userId);
+	}
+	
 	public Participant getMyself()
 	{
 		return getUsersModule().getParticipants().get(myUserId);
@@ -142,7 +146,7 @@ public class BigBlueButtonClient {
 		return chatModule.getPublicChatMessage();
 	}
 
-	public void sendPrivateChatMessage(String message, int userId) {
+	public void sendPrivateChatMessage(String message, String userId) {
 		chatModule.sendPrivateChatMessage(message, userId);
 	}
 
@@ -158,11 +162,11 @@ public class BigBlueButtonClient {
 		usersModule.raiseHand(userId, value);
 	}
 	
-	public void assignPresenter(int userId) {
+	public void assignPresenter(String userId) {
 		usersModule.assignPresenter(userId);
 	}
 
-	public void kickUser(int userId) {
+	public void kickUser(String userId) {
 		usersModule.kickUser(userId);
 	}
 
@@ -298,8 +302,8 @@ public class BigBlueButtonClient {
 	public boolean removeParticipantJoinedListener(OnParticipantJoinedListener listener) { return participantJoinedListeners.remove(listener); }
 	public Set<OnParticipantJoinedListener> getParticipantJoinedListeners() { return participantJoinedListeners; }
 	
-	public boolean addParticipantLeftListener(OnParticipantLeftListener listener) { return participantLeftListeners.add(listener); }
-	public boolean removeParticipantLeftListener(OnParticipantLeftListener listener) { return participantLeftListeners.remove(listener); }
+	public boolean addParticipantLeftListener(OnParticipantLeftListener listener) { boolean r; synchronized (participantLeftListeners) { r = participantLeftListeners.add(listener); } return r;  }
+	public boolean removeParticipantLeftListener(OnParticipantLeftListener listener) { boolean r; synchronized (participantLeftListeners) { r = participantLeftListeners.remove(listener); } return r;  }
 	public Set<OnParticipantLeftListener> getParticipantLeftListeners() { return participantLeftListeners; }
 	
 	public boolean addParticipantStatusChangeListener(OnParticipantStatusChangeListener listener) { return participantStatusChangeListeners.add(listener); }
