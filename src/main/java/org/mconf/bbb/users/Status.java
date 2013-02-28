@@ -21,22 +21,26 @@
 
 package org.mconf.bbb.users;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.mconf.bbb.api.ApplicationService;
 
 public class Status {
-
+	
 	private boolean raiseHand;
 	private boolean hasStream;
-	private boolean presenter;
-	private String streamName;
-
+	private boolean presenter;	
+	private List<String> streamNameList;
+	
 	public Status(Map<String, Object> param, String appServerVersion) {
+		streamNameList = new ArrayList<String>();
 		decode(param, appServerVersion);
 	}
 	
 	public Status() {
+		streamNameList = new ArrayList<String>();
 	}
 
 	/*
@@ -46,8 +50,10 @@ public class Status {
 	public void decode(Map<String, Object> param, String appServerVersion) {
 		raiseHand = (Boolean) param.get("raiseHand");
 		setHasStream(param.get("hasStream"));
-		if (appServerVersion.equals(ApplicationService.VERSION_0_7))
-			streamName = hasStream? (String) param.get("streamName") : "";
+		if (appServerVersion.equals(ApplicationService.VERSION_0_7)) {
+			String name = hasStream? (String) param.get("streamName") : "";
+			setStreamName(name);
+		}
 		presenter = (Boolean) param.get("presenter");
 	}
 
@@ -61,6 +67,10 @@ public class Status {
 
 	public boolean doesHaveStream() {
 		return hasStream;
+	}
+	
+	public boolean doesHaveStream(String streamName) {
+		return streamNameList.contains(streamName) ? true : false;
 	}
 
 	public void setHasStream(boolean hasStream) {
@@ -77,18 +87,57 @@ public class Status {
 				String[] tuple = params[i].split("=");
 				if (tuple.length < 2)
 					continue;
-				if (tuple[0].equals("stream"))
-					streamName = tuple[1];
+				if (tuple[0].equals("stream")) {
+					setStreamName(tuple[1]);
+				}
 			}
 		}
 	}
-
+	
 	public String getStreamName() {
+		/*
+		 * returns all the stream names (SN) in the format SN|SN|...|SN
+		 * 
+		 * example: 160x12042-12642868|160x12042-12742666
+		 * 
+		 */
+		
+		String streamName = "";
+		for(int i = 0; i < streamNameList.size(); i++) {
+			
+			if(i != 0)
+				streamName+= "|";
+			
+			streamName += streamNameList.get(i);
+		}
 		return streamName;
+	}
+	
+	public String getStreamName(int index) {
+		/*
+		 * returns the stream name at position 'index' in the streamNameList
+		 * 
+		 * example: 160x12042-12742666
+		 */
+		
+		return streamNameList.get(index);
 	}
 
 	public void setStreamName(String streamName) {
-		this.streamName = streamName;
+		/*
+		 * streamName is a series of one or more stream names separated by a '|'
+		 * 
+		 * example: 160x12042-12642868|160x12042-12742666
+		 * 
+		 */
+		
+		String [] names = streamName.split("\\|");
+		
+		if(!streamNameList.isEmpty())
+			streamNameList.clear();
+		
+		for(String name:names)
+			streamNameList.add(name);
 	}
 
 	public boolean isPresenter() {
@@ -98,11 +147,15 @@ public class Status {
 	public void setPresenter(boolean presenter) {
 		this.presenter = presenter;
 	}
+	
+	public int getNumberOfStreams() {
+		return streamNameList.size();
+	}
 
 	@Override
 	public String toString() {
 		return "Status [hasStream=" + hasStream + ", presenter=" + presenter
-				+ ", raiseHand=" + raiseHand + ", streamName=" + streamName
+				+ ", raiseHand=" + raiseHand + ", streamName=" + getStreamName()
 				+ "]";
 	}
 	
@@ -112,8 +165,10 @@ public class Status {
 		clone.hasStream = this.hasStream;
 		clone.presenter = this.presenter;
 		clone.raiseHand = this.raiseHand;
-		clone.streamName = this.streamName;
+		
+		for(String name:this.streamNameList)
+			clone.streamNameList.add(name);
+		
 		return clone;
 	}
-
 }

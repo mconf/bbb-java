@@ -55,7 +55,7 @@ public class BbbVideoReceiver {
 	private String streamName;
 	private VideoConnection videoConnection;
 	
-	public BbbVideoReceiver(String userId, BigBlueButtonClient context) {
+	public BbbVideoReceiver(String userId, BigBlueButtonClient context, int streamToShow) {
 		this.userId = userId;
 
 		ClientOptions opt = new ClientOptions();
@@ -66,7 +66,7 @@ public class BbbVideoReceiver {
 		streamName = null;
 		for (Participant p : context.getParticipants()) {
 			if (p.getUserId().equals(userId) && p.hasStream()) {
-				streamName = p.getStatus().getStreamName();
+				streamName = p.getStatus().getStreamName(streamToShow);
 				break;
 			}
 		}
