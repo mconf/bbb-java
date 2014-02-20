@@ -31,6 +31,7 @@ public class Status {
 	private boolean hasStream;
 	private boolean presenter;
 	private String streamName;
+	private String mood;
 
 	public Status(Map<String, Object> param, String appServerVersion) {
 		decode(param, appServerVersion);
@@ -44,11 +45,24 @@ public class Status {
 	 * {raiseHand=false, hasStream=false, presenter=true}
 	 */
 	public void decode(Map<String, Object> param, String appServerVersion) {
-		raiseHand = (Boolean) param.get("raiseHand");
+		if (param.containsKey("raiseHand")) {
+			raiseHand = (Boolean) param.get("raiseHand");
+		}
+		if (param.containsKey("mood")) {
+			mood = (String) param.get("mood");
+		}
 		setHasStream(param.get("hasStream"));
 		if (appServerVersion.equals(ApplicationService.VERSION_0_7))
 			streamName = hasStream? (String) param.get("streamName") : "";
 		presenter = (Boolean) param.get("presenter");
+	}
+	
+	public String getMood() {
+		return mood;
+	}
+	
+	public void setMood(String value) {
+		mood = value;
 	}
 
 	public boolean isRaiseHand() {

@@ -149,8 +149,14 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	 * {@link} https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/modules/chat/services/PublicChatSharedObjectService.as#L128
 	 */
 	public void doGetChatMessages() {
-    	Command cmd = new CommandAmf0("chat.getChatMessages", null);
-    	handler.writeCommandExpectingResult(channel, cmd);
+		String commandName;
+		if (handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81)) {
+			commandName = "chat.sendPublicChatHistory";
+		} else {
+			commandName = "chat.getChatMessages";
+		}
+		Command cmd = new CommandAmf0(commandName, null);
+		handler.writeCommandExpectingResult(channel, cmd);
 	}
 	
 	/**
@@ -239,13 +245,41 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	public Map<String, List<ChatMessage>> getPrivateChatMessage() {
 		return privateChatMessages;
 	}
+	
+	private void onMessageReceived(Object obj) {
+		ChatMessageVO msg = new ChatMessageVO();
+		msg.fromMap((Map<String, Object>) obj);
+		
+		log.error("Chat message received\n{}", msg.toString());
+		
+		//\TODO do something with the received message
+	}
+
+	public boolean onMessageFromServer(Command command) {
+		String type = (String) command.getArg(0);
+		if (type.equals("ChatReceivePublicMessageCommand") || type.equals("ChatReceivePrivateMessageCommand")) {
+			onMessageReceived(command.getArg(1));
+			return true;
+		} else if (type.equals("ChatRequestMessageHistoryReply")) {
+			Map<String, Object> args = (Map<String, Object>) command.getArg(1);
+			int count = Double.valueOf(args.get("count").toString()).intValue();
+			List<Object> messages = (List<Object>) Arrays.asList((Object[]) args.get("messages"));
+			for (int i = 0; i < count; ++i) {
+				onMessageReceived(messages.get(i));
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
 
 	@Override
 	public boolean onCommand(String resultFor, Command command) {
-		if (onGetChatMessages(resultFor, command))
+		if (onGetChatMessages(resultFor, command)) {
 			return true;
-		else
+		} else {
 			return false;
+		}
 	}
 
 }

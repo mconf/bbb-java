@@ -21,6 +21,11 @@
 
 package org.mconf.bbb.phone;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.netty.channel.Channel;
@@ -31,6 +36,7 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.mconf.bbb.BigBlueButtonClient;
 import org.mconf.bbb.RtmpConnection;
+import org.mconf.bbb.api.ApplicationService;
 import org.mconf.bbb.api.JoinedMeeting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,9 +64,25 @@ public abstract class VoiceConnection extends RtmpConnection {
 	private String codec;
 	private int playStreamId = -1;
 	private int publishStreamId = -1;
+	private boolean listenOnly = false;
+	private String username;
 
 	public VoiceConnection(ClientOptions options, BigBlueButtonClient context) {
 		super(options, context);
+		
+		JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
+		username = meeting.getExternUserID() + "-bbbID-" + meeting.getFullname();
+		try {
+			username = URLEncoder.encode(username, "UTF-8")
+					.replaceAll("\\+", "%20")
+					.replaceAll("\\%21", "!")
+					.replaceAll("\\%27", "'")
+					.replaceAll("\\%28", "(")
+					.replaceAll("\\%29", ")")
+					.replaceAll("\\%7E", "~");
+		} catch (UnsupportedEncodingException exception) {
+			exception.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -85,8 +107,12 @@ public abstract class VoiceConnection extends RtmpConnection {
          * netConnection.connect(uri, externUID, username);
          */
         JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
-		options.setArgs(meeting.getExternUserID(), context.getMyUserId() + "-" + meeting.getFullname());
-		Command connect = Command.connect(options);
+        if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81)) {
+            options.setArgs(meeting.getInternalUserID(), username);
+        } else {
+            options.setArgs(meeting.getExternUserID(), context.getMyUserId() + "-" + meeting.getFullname());
+        }
+        Command connect = Command.connect(options);
         writeCommandExpectingResult(e.getChannel(), connect);
 	}
 	
@@ -109,10 +135,20 @@ public abstract class VoiceConnection extends RtmpConnection {
     
     // netConnection.call("voiceconf.call", null, "default", username, dialStr);
     public void call(Channel channel) {
-    	Command command = new CommandAmf0("voiceconf.call", null,
-    			"default",
-    			context.getJoinService().getJoinedMeeting().getFullname(), 
-    			context.getJoinService().getJoinedMeeting().getWebvoiceconf());
+        Command command;
+        List<Object> args = new ArrayList<Object>();
+        args.add("default");
+        if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81)) {
+            args.add(username);
+        } else {
+            args.add(context.getJoinService().getJoinedMeeting().getFullname());
+        }
+        args.add(context.getJoinService().getJoinedMeeting().getWebvoiceconf());
+        if (listenOnly) {
+            args.add(true);
+        }
+        
+        command = new CommandAmf0("voiceconf.call", null, args.toArray());
     	writeCommandExpectingResult(channel, command);
     }
     
@@ -163,9 +199,7 @@ public abstract class VoiceConnection extends RtmpConnection {
                 newOptions.setStreamName(playName);
                 channel.write(Command.play(playStreamId, newOptions));
                 channel.write(Control.setBuffer(playStreamId, 0));
-                return;
-
-        	} else if (publishStreamId == -1) {
+            } else if (publishStreamId == -1 && !listenOnly) {
                 publishStreamId = ((Double) command.getArg(0)).intValue();
                 log.debug("publishStreamId to use: {}", publishStreamId);
 
@@ -195,7 +229,6 @@ public abstract class VoiceConnection extends RtmpConnection {
                 channel.write(Command.publish(publishStreamId, holdChannel(publishStreamId), newOptions));
                 return;
         	}
-
         } else if (onCall(resultFor, command)) {
         	return;
         } else {
@@ -205,16 +238,18 @@ public abstract class VoiceConnection extends RtmpConnection {
     
     @Override
     protected void onCommandCustom(Channel channel, Command command, String name) {
-    	if (name.equals("successfullyJoinedVoiceConferenceCallback")) {
-        	onSuccessfullyJoined(command);
-        	writeCommandExpectingResult(channel, Command.createStream());
-        	writeCommandExpectingResult(channel, Command.createStream());
+        if (name.equals("successfullyJoinedVoiceConferenceCallback")) {
+            onSuccessfullyJoined(command);
+            writeCommandExpectingResult(channel, Command.createStream());
+            if (!listenOnly) {
+                writeCommandExpectingResult(channel, Command.createStream());
+            }
         } else if (name.equals("disconnectedFromJoinVoiceConferenceCallback")) {
-        	onDisconnectedFromJoin(command);
-        	channel.close();
+            onDisconnectedFromJoin(command);
+            channel.close();
         } else if (name.equals("failedToJoinVoiceConferenceCallback")) {
-        	onFailedToJoin(command);
-        	channel.close();
+            onFailedToJoin(command);
+            channel.close();
         }
     }
     

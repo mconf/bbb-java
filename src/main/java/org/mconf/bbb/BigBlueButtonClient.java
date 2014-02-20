@@ -326,4 +326,13 @@ public class BigBlueButtonClient {
 	public boolean removeAudioListener(OnAudioListener listener) { return audioListeners.remove(listener); }
 	public Set<OnAudioListener> getAudioListeners() { return audioListeners; }
 
+	public boolean onMessageFromServer(Command command) {
+		if (chatModule.onMessageFromServer(command))
+			return true;
+		else {
+			log.warn("Unhandled onMessageFromServer: " + command.getArg(0));
+			return false;
+		}
+	}
+
 }

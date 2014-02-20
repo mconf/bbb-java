@@ -122,7 +122,8 @@ public class MainRtmpConnection extends RtmpConnection {
 		List<Object> args = new ArrayList<Object>();
 		args.add(meeting.getFullname());
 		args.add(meeting.getRole());
-		args.add(meeting.getConference());
+		if (!context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81))
+			args.add(meeting.getConference());
 		if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_7))
 			args.add(meeting.getMode());
 		args.add(meeting.getRoom());
@@ -130,8 +131,9 @@ public class MainRtmpConnection extends RtmpConnection {
 		args.add(meeting.doRecord());
 		args.add(meeting.getExternUserID());
 		args.add(meeting.getInternalUserID());
-		if (meeting.isGuestDefined())
+		if (meeting.isGuestDefined()) {
 			args.add(meeting.isGuest());
+		}
 		
 		options.setArgs(args.toArray());
 		
@@ -213,9 +215,15 @@ public class MainRtmpConnection extends RtmpConnection {
 	                } else if (onGetMyUserId(resultFor, command)) {
 	                	context.createUsersModule(this, channel);
 	                	break;
-	                } 
+	                }
 	                context.onCommand(resultFor, command);
                 	break;
+	            } else if (name.equals("_error")) {
+	                Map<String, Object> args = (Map<String, Object>) command.getArg(0);
+	                log.error(args.get("code").toString() + ": " + args.get("description").toString());
+	            } else if (name.equals("onMessageFromServer")) {
+	                context.onMessageFromServer(command);
+	                break;
 	            }
 	            break;
 	            
