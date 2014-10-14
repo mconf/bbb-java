@@ -54,10 +54,10 @@ public abstract class JoinServiceBase {
 	protected abstract String getCreateMeetingUrl(String meetingID);
 	protected abstract String getLoadUrl();
 	protected abstract String getJoinUrl(Meeting meeting, String name, boolean moderator);
-	protected abstract String getDemoPath();
+	protected abstract String getApiPath();
 	
 	protected String getFullDemoPath() {
-		return getFullServerUrl() + getDemoPath();
+		return getFullServerUrl() + getApiPath();
 	}
 	
 	private String getFullServerUrl() {
@@ -120,7 +120,7 @@ public abstract class JoinServiceBase {
 		return join(getFullDemoPath() + getJoinUrl(meeting, name, moderator));
 	}
 	
-	private int join(String joinUrl) { //.
+	protected int join(String joinUrl) { //.
 		joinedMeeting = new JoinedMeeting();
 		try {
 			String joinResponse = getUrl(joinUrl);
@@ -172,6 +172,7 @@ public abstract class JoinServiceBase {
 			
 	        // have to modify the answer of the api/enter in case when the join
 	        // message is answered by another host (proxy)
+	        EntityUtils.consume(httpResponse.getEntity());
 			String enterResponse = getUrl(client, enterUrl).replace("</response>", "<server>" + currentHost.toURI() + "</server></response>");
 			joinedMeeting.parse(enterResponse);
 		} catch (Exception e) {

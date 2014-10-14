@@ -46,7 +46,7 @@ public class JoinService0Dot8 extends JoinServiceBase {
 	}
 
 	@Override
-	protected String getDemoPath() {
+	protected String getApiPath() {
 		return "/demo/mobile.jsp";
 	}
 

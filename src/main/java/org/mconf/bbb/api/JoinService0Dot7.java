@@ -8,7 +8,7 @@ public class JoinService0Dot7 extends JoinServiceBase {
 	}
 
 	@Override
-	protected String getDemoPath() {
+	protected String getApiPath() {
 		return "/bigbluebutton/demo/mobile.jsp";
 	}
 

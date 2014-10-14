@@ -290,4 +290,7 @@ public abstract class VoiceConnection extends RtmpConnection {
 	
 	abstract protected void onAudio(Audio audio);
 
+	public void setListenOnly(boolean listenOnly) {
+		this.listenOnly = listenOnly;
+	}
 }
