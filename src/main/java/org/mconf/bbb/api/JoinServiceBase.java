@@ -75,7 +75,7 @@ public abstract class JoinServiceBase {
 			log.error("Can't get the url {}", createUrl);
 		}
 		
-		if (meetingID.equals(response))
+		if (ParserUtils.getNodeValueFromResponse(response, "returncode").equals("SUCCESS"))
 			return E_OK;
 		else {
 			log.error("create response: {}", response);
@@ -125,7 +125,7 @@ public abstract class JoinServiceBase {
 		try {
 			String joinResponse = getUrl(joinUrl);
 			log.debug("join response: {}", joinResponse);
-			joinedMeeting.parse(joinResponse);
+			joinedMeeting.parseXML(joinResponse);
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Can't join the url {}", joinUrl);
@@ -174,7 +174,14 @@ public abstract class JoinServiceBase {
 	        // message is answered by another host (proxy)
 	        EntityUtils.consume(httpResponse.getEntity());
 			String enterResponse = getUrl(client, enterUrl).replace("</response>", "<server>" + currentHost.toURI() + "</server></response>");
-			joinedMeeting.parse(enterResponse);
+			
+			// TODO: check if this will continue this way with 0.81
+			if (getVersion() == ApplicationService.VERSION_0_9 ||
+				getVersion() == ApplicationService.VERSION_0_81) {
+				joinedMeeting.parseJSON(enterResponse);
+			} else {
+				joinedMeeting.parseXML(enterResponse);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Can't join the url {}", joinUrl);

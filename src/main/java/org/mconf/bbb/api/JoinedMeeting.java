@@ -29,6 +29,10 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.json.JSONTokener;
+import org.json.JSONObject;
+import org.json.JSONException;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -75,7 +79,7 @@ public class JoinedMeeting {
 	 * 	<welcome>&lt;br&gt;Welcome to this BigBlueButton Demo Server.&lt;br&gt;&lt;br&gt;For help using BigBlueButton &lt;a href="event:http://www.bigbluebutton.org/content/videos"&gt;&lt;u&gt;check out these videos&lt;/u&gt;&lt;/a&gt;.&lt;br&gt;&lt;br&gt;</welcome>
 	 * </response>
 	 */
-	public void parse(String str) throws UnsupportedEncodingException, SAXException, IOException, ParserConfigurationException {	
+	public void parseXML(String str) throws UnsupportedEncodingException, SAXException, IOException, ParserConfigurationException {	
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.parse(new ByteArrayInputStream(str.getBytes("UTF-8")));
@@ -102,6 +106,64 @@ public class JoinedMeeting {
 			guest = ParserUtils.getNodeValue(nodeResponse, "guest");
 		} else {
 			message = ParserUtils.getNodeValue(nodeResponse, "message");
+		}
+	}
+
+	/*
+	 * {
+	 * "response":
+	 * 	{
+	 * 	"returncode":"SUCCESS",
+	 * 	"fullname":"Bot 1",
+	 * 	"confname":"",
+	 * 	"meetingID":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1418654380325",
+	 * 	"externMeetingID":"Test meeting 001",
+	 * 	"externUserID":"lqlzoio0wuda",
+	 * 	"internalUserID":"lqlzoio0wuda",
+	 * 	"role":"VIEWER",
+	 * 	"conference":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1418654380325",
+	 * 	"room":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1418654380325",
+	 * 	"voicebridge":"82736",
+	 * 	"dialnumber":"613-555-1234",
+	 * 	"webvoiceconf":"82736",
+	 * 	"mode":"LIVE",
+	 * 	"record":"false",
+	 * 	"allowStartStopRecording":true,
+	 * 	"welcome":"<br>Welcome to <b><\u002fb>!<br><br>For help on using BigBlueButton see these (short) <a href=\"event:http://www.bigbluebutton.org/content/videos\"><u>tutorial videos<\u002fu><\u002fa>.<br><br>To join the audio bridge click the headset icon (upper-left hand corner).  Use a headset to avoid causing background noise for others.<br><br><br>This server is running a build of <a href=\"https://code.google.com/p/bigbluebutton/wiki/090Overview\" target=\"_blank\"><u>BigBlueButton 0.9.0-beta<\u002fu><\u002fa>.",
+	 * 	"logoutUrl":"http://10.0.3.100",
+	 * 	"defaultLayout":"NOLAYOUT",
+	 * 	"avatarURL":"http://10.0.3.100/client/avatar.png",
+	 * 	"customdata":[]
+	 * 	}
+	 * }
+	 */
+	public void parseJSON(String str) throws JSONException {
+		JSONObject obj = new JSONObject(new JSONTokener(str));
+		JSONObject response = (JSONObject) obj.get("response");
+		returncode = (String) response.get("returncode");
+
+		if (returncode.equals("SUCCESS")) {
+			fullname = (String) response.get("fullname");
+			confname = (String) response.get("confname");
+			meetingID = (String) response.get("meetingID");
+			externUserID = (String) response.get("externUserID");
+			role = (String) response.get("role");
+			conference = (String) response.get("conference");
+			room = (String) response.get("room");
+			voicebridge = (String) response.get("voicebridge");
+			webvoiceconf = (String) response.get("webvoiceconf");
+			mode = (String) response.get("mode");
+			record = (String) response.get("record");
+			welcome = (String) response.get("welcome");
+			// TODO: check if server is the logoutUrl
+//			server = (String) response.get("logoutUrl");
+			server = "http://10.0.3.100";
+			internalUserID = (String) response.get("internalUserID");
+			// This is not available in 0.9
+//			guest = (String) response.get("guest");
+			guest = "false";
+		} else {
+			message = (String) response.get("message");
 		}
 	}
 
