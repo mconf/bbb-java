@@ -122,7 +122,8 @@ public class MainRtmpConnection extends RtmpConnection {
 		List<Object> args = new ArrayList<Object>();
 		args.add(meeting.getFullname());
 		args.add(meeting.getRole());
-		if (!context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81))
+		if (!context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) &&
+			!context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9))
 			args.add(meeting.getConference());
 		if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_7))
 			args.add(meeting.getMode());
@@ -132,9 +133,12 @@ public class MainRtmpConnection extends RtmpConnection {
 		args.add(meeting.getExternUserID());
 		args.add(meeting.getInternalUserID());
 		if (meeting.isGuestDefined()) {
-			args.add(meeting.isGuest());
+//			args.add(meeting.isGuest());
 		}
-		
+		args.add(meeting.getLockOnStart());
+		args.add(meeting.getMuteOnStart());
+		args.add(meeting.getLockSettings());
+
 		options.setArgs(args.toArray());
 		
 		writeCommandExpectingResult(e.getChannel(), Command.connect(options));

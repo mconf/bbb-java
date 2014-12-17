@@ -37,6 +37,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class JoinedMeeting {
 	private String returncode;
 	private String fullname;
@@ -56,6 +59,10 @@ public class JoinedMeeting {
 	private String internalUserID;
 	// guest is a new feature added on Mconf-Live 0.2
 	private String guest;
+	// These are some 0.9 extras
+	private Boolean lockOnStart;
+	private Boolean muteOnStart;
+	private Map<String, Object> lockSettings;
 
 	public JoinedMeeting() {
 		
@@ -155,16 +162,31 @@ public class JoinedMeeting {
 			mode = (String) response.get("mode");
 			record = (String) response.get("record");
 			welcome = (String) response.get("welcome");
-			// TODO: check if server is the logoutUrl
-//			server = (String) response.get("logoutUrl");
-			server = "http://10.0.3.100";
+//			server = (String) response.get("server");
 			internalUserID = (String) response.get("internalUserID");
-			// This is not available in 0.9
 //			guest = (String) response.get("guest");
+
+			server = "http://10.0.3.100";
 			guest = "false";
+
+			lockOnStart = false;
+			muteOnStart = false;
+			lockSettings = buildLockSettings();
 		} else {
 			message = (String) response.get("message");
 		}
+	}
+
+	private Map buildLockSettings() {
+		Map<String, Object> lockSettings = new HashMap<String, Object>();
+
+		lockSettings.put("disableCam", false);
+		lockSettings.put("disableMic", false);
+		lockSettings.put("disablePrivateChat", false);
+		lockSettings.put("disablePublicChat", false);
+		lockSettings.put("lockedLayout", false);
+
+		return lockSettings;
 	}
 
 	public String getReturncode() {
@@ -279,5 +301,29 @@ public class JoinedMeeting {
 
 	public void setInternalUserID(String internalUserID) {
 		this.internalUserID = internalUserID;
+	}
+
+	public Boolean getLockOnStart() {
+		return lockOnStart;
+	}
+
+	public void setLockOnStart(Boolean lockOnStart) {
+		this.lockOnStart = lockOnStart;
+	}
+
+	public Boolean getMuteOnStart() {
+		return muteOnStart;
+	}
+
+	public void setMuteOnStart(Boolean muteOnStart) {
+		this.muteOnStart = muteOnStart;
+	}
+
+	public Map<String, Object> getLockSettings() {
+		return lockSettings;
+	}
+
+	public void setLockSettings(Map<String, Object> lockSettings) {
+		this.lockSettings = lockSettings;
 	}
 }
