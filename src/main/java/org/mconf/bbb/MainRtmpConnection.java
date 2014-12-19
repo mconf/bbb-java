@@ -133,12 +133,14 @@ public class MainRtmpConnection extends RtmpConnection {
 		args.add(meeting.getExternUserID());
 		args.add(meeting.getInternalUserID());
 		if (meeting.isGuestDefined()) {
-//			args.add(meeting.isGuest());
+			args.add(meeting.isGuest());
 		}
-		args.add(meeting.getLockOnStart());
-		args.add(meeting.getMuteOnStart());
-		args.add(meeting.getLockSettings());
-
+		if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) ||
+			context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
+			args.add(meeting.getLockOnStart());
+			args.add(meeting.getMuteOnStart());
+			args.add(meeting.getLockSettings());
+		}
 		options.setArgs(args.toArray());
 		
 		writeCommandExpectingResult(e.getChannel(), Command.connect(options));
@@ -159,7 +161,17 @@ public class MainRtmpConnection extends RtmpConnection {
 	public String connectGetCode(Command command) {
     	return ((Map<String, Object>) command.getArg(0)).get("code").toString();
     }
-	
+
+	private void setMyUserId(Channel channel) {
+		JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
+		context.setMyUserId(meeting.getInternalUserID());
+	connected = true;
+		for (OnConnectedListener l : context.getConnectedListeners())
+			l.onConnectedSuccessfully();
+
+		context.createUsersModule(this, channel);
+	}
+
     public void doGetMyUserId(Channel channel) {
     	Command command = new CommandAmf0("getMyUserId", null);
     	writeCommandExpectingResult(channel, command);
@@ -177,7 +189,7 @@ public class MainRtmpConnection extends RtmpConnection {
     	} else
     		return false;
     }
-    
+
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) {
         final Channel channel = me.getChannel();
@@ -206,20 +218,29 @@ public class MainRtmpConnection extends RtmpConnection {
 	                	break;
 	                }
 	                log.info("result for method call: {}", resultFor);
-	                if(resultFor.equals("connect")) {
-	                	String code = connectGetCode(command);
-	                	if (code.equals("NetConnection.Connect.Success"))
-	                		doGetMyUserId(channel);
-	                	else {
+					if(resultFor.equals("connect")) {
+						String code = connectGetCode(command);
+						if (code.equals("NetConnection.Connect.Success")) {
+							// TODO: Here we have to change and get this internalID directly from the bot
+							if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) ||
+								context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
+								setMyUserId(channel);
+								} else {
+									doGetMyUserId(channel);
+								}
+							} else {
 	                		log.error("method connect result in {}, quitting", code);
 	                		log.debug("connect response: {}", command.toString());
 	                		channel.close();
 	                	}
 	                	return;
-	                } else if (onGetMyUserId(resultFor, command)) {
-	                	context.createUsersModule(this, channel);
-	                	break;
-	                }
+					} else if (!context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) &&
+								!context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
+						if (onGetMyUserId(resultFor, command)) {
+							context.createUsersModule(this, channel);
+							break;
+						}
+					}
 	                context.onCommand(resultFor, command);
                 	break;
 	            } else if (name.equals("_error")) {
