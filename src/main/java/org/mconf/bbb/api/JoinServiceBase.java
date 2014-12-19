@@ -3,6 +3,7 @@ package org.mconf.bbb.api;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,13 +49,14 @@ public abstract class JoinServiceBase {
 	protected Meetings meetings = new Meetings();
 	protected boolean loaded = false;
 	protected ApplicationService appService = null;
-	private BbbServerConfig serverConfig = null;
+	protected BbbServerConfig serverConfig = null;
 	
 	public abstract String getVersion();
 	protected abstract String getCreateMeetingUrl(String meetingID);
 	protected abstract String getLoadUrl();
 	protected abstract String getJoinUrl(Meeting meeting, String name, boolean moderator);
 	protected abstract String getApiPath();
+	public abstract Map<String, Object> getLockSettings();
 	
 	protected String getFullDemoPath() {
 		return getFullServerUrl() + getApiPath();

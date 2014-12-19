@@ -40,6 +40,7 @@ import org.xml.sax.SAXException;
 import java.util.HashMap;
 import java.util.Map;
 
+
 public class JoinedMeeting {
 	private String returncode;
 	private String fullname;
@@ -58,7 +59,7 @@ public class JoinedMeeting {
 	private String server;
 	private String internalUserID;
 	// guest is a new feature added on Mconf-Live 0.2
-	private String guest;
+	private String guest = "";
 	// These are some 0.9 extras
 	private Boolean lockOnStart;
 	private Boolean muteOnStart;
@@ -162,12 +163,11 @@ public class JoinedMeeting {
 			mode = (String) response.get("mode");
 			record = (String) response.get("record");
 			welcome = (String) response.get("welcome");
-//			server = (String) response.get("server");
 			internalUserID = (String) response.get("internalUserID");
 //			guest = (String) response.get("guest");
 
-			server = "http://10.0.3.100";
-			guest = "false";
+			// TODO: This shoud be checked if it's the same as the logoutUrl
+			server = (String) response.get("logoutUrl");
 
 			lockOnStart = false;
 			muteOnStart = false;
@@ -177,7 +177,7 @@ public class JoinedMeeting {
 		}
 	}
 
-	private Map buildLockSettings() {
+	private Map<String, Object> buildLockSettings() {
 		Map<String, Object> lockSettings = new HashMap<String, Object>();
 
 		lockSettings.put("disableCam", false);
@@ -320,6 +320,7 @@ public class JoinedMeeting {
 	}
 
 	public Map<String, Object> getLockSettings() {
+
 		return lockSettings;
 	}
 

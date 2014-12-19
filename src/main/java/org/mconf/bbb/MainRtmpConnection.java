@@ -139,7 +139,7 @@ public class MainRtmpConnection extends RtmpConnection {
 			context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
 			args.add(meeting.getLockOnStart());
 			args.add(meeting.getMuteOnStart());
-			args.add(meeting.getLockSettings());
+			args.add(context.getJoinService().getLockSettings());
 		}
 		options.setArgs(args.toArray());
 		
@@ -165,7 +165,7 @@ public class MainRtmpConnection extends RtmpConnection {
 	private void setMyUserId(Channel channel) {
 		JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
 		context.setMyUserId(meeting.getInternalUserID());
-	connected = true;
+		connected = true;
 		for (OnConnectedListener l : context.getConnectedListeners())
 			l.onConnectedSuccessfully();
 
