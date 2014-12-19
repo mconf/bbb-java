@@ -37,10 +37,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import java.util.HashMap;
-import java.util.Map;
-
-
 public class JoinedMeeting {
 	private String returncode;
 	private String fullname;
@@ -63,7 +59,6 @@ public class JoinedMeeting {
 	// These are some 0.9 extras
 	private Boolean lockOnStart;
 	private Boolean muteOnStart;
-	private Map<String, Object> lockSettings;
 
 	public JoinedMeeting() {
 		
@@ -171,22 +166,9 @@ public class JoinedMeeting {
 
 			lockOnStart = false;
 			muteOnStart = false;
-			lockSettings = buildLockSettings();
 		} else {
 			message = (String) response.get("message");
 		}
-	}
-
-	private Map<String, Object> buildLockSettings() {
-		Map<String, Object> lockSettings = new HashMap<String, Object>();
-
-		lockSettings.put("disableCam", false);
-		lockSettings.put("disableMic", false);
-		lockSettings.put("disablePrivateChat", false);
-		lockSettings.put("disablePublicChat", false);
-		lockSettings.put("lockedLayout", false);
-
-		return lockSettings;
 	}
 
 	public String getReturncode() {
@@ -317,14 +299,5 @@ public class JoinedMeeting {
 
 	public void setMuteOnStart(Boolean muteOnStart) {
 		this.muteOnStart = muteOnStart;
-	}
-
-	public Map<String, Object> getLockSettings() {
-
-		return lockSettings;
-	}
-
-	public void setLockSettings(Map<String, Object> lockSettings) {
-		this.lockSettings = lockSettings;
 	}
 }
