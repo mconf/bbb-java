@@ -52,11 +52,14 @@ public abstract class JoinServiceBase {
 	protected BbbServerConfig serverConfig = null;
 	
 	public abstract String getVersion();
+	public abstract Map<String, Object> getLockSettings();
+	public abstract boolean getLockOnStart();
+	public abstract boolean getMuteOnStart();
+	
 	protected abstract String getCreateMeetingUrl(String meetingID);
 	protected abstract String getLoadUrl();
 	protected abstract String getJoinUrl(Meeting meeting, String name, boolean moderator);
 	protected abstract String getApiPath();
-	public abstract Map<String, Object> getLockSettings();
 	
 	protected String getFullDemoPath() {
 		return getFullServerUrl() + getApiPath();

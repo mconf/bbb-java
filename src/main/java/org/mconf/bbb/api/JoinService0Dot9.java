@@ -96,4 +96,12 @@ public class JoinService0Dot9 extends JoinServiceBase {
 	public Map<String, Object> getLockSettings() {
 		return serverConfig.getLockSettings();
 	}
+
+	public boolean getLockOnStart() {
+		return serverConfig.getLockOnStart();
+	}
+
+	public boolean getMuteOnStart() {
+		return serverConfig.getMuteOnStart();
+	}
 }

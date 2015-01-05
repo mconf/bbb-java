@@ -56,9 +56,6 @@ public class JoinedMeeting {
 	private String internalUserID;
 	// guest is a new feature added on Mconf-Live 0.2
 	private String guest = "";
-	// These are some 0.9 extras
-	private Boolean lockOnStart;
-	private Boolean muteOnStart;
 
 	public JoinedMeeting() {
 		
@@ -160,12 +157,8 @@ public class JoinedMeeting {
 			welcome = (String) response.get("welcome");
 			internalUserID = (String) response.get("internalUserID");
 //			guest = (String) response.get("guest");
-
 			// TODO: This shoud be checked if it's the same as the logoutUrl
 			server = (String) response.get("logoutUrl");
-
-			lockOnStart = false;
-			muteOnStart = false;
 		} else {
 			message = (String) response.get("message");
 		}
@@ -283,21 +276,5 @@ public class JoinedMeeting {
 
 	public void setInternalUserID(String internalUserID) {
 		this.internalUserID = internalUserID;
-	}
-
-	public Boolean getLockOnStart() {
-		return lockOnStart;
-	}
-
-	public void setLockOnStart(Boolean lockOnStart) {
-		this.lockOnStart = lockOnStart;
-	}
-
-	public Boolean getMuteOnStart() {
-		return muteOnStart;
-	}
-
-	public void setMuteOnStart(Boolean muteOnStart) {
-		this.muteOnStart = muteOnStart;
 	}
 }
