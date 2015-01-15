@@ -192,6 +192,9 @@ public class MainRtmpConnection extends RtmpConnection {
 
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) {
+        log.debug("message event: {}", me.toString());
+//        System.out.println(me.toString());
+//        System.out.println(ctx.toString());
         final Channel channel = me.getChannel();
         final RtmpMessage message = (RtmpMessage) me.getMessage();
         switch(message.getHeader().getMessageType()) {
@@ -241,13 +244,18 @@ public class MainRtmpConnection extends RtmpConnection {
 							break;
 						}
 					}
-	                context.onCommand(resultFor, command);
+//	                context.onCommand(resultFor, command);
                 	break;
 	            } else if (name.equals("_error")) {
 	                Map<String, Object> args = (Map<String, Object>) command.getArg(0);
 	                log.error(args.get("code").toString() + ": " + args.get("description").toString());
 	            } else if (name.equals("onMessageFromServer")) {
-	                context.onMessageFromServer(command);
+	            	if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) ||
+	            		context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
+	            		context.onMessageFromServer090(command);
+	            	} else {
+	            		context.onMessageFromServer(command);
+	            	}
 	                break;
 	            }
 	            break;

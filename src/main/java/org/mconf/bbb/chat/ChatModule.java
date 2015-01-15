@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.json.JSONObject;
+
 import org.jboss.netty.channel.Channel;
 import org.mconf.bbb.BigBlueButtonClient.OnPrivateChatMessageListener;
 import org.mconf.bbb.BigBlueButtonClient.OnPublicChatMessageListener;
@@ -273,6 +275,16 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		}
 	}
 
+	public boolean onMessageFromServer(String msgName, JSONObject jobj) {
+		switch (msgName) {
+			case "ChatRequestMessageHistoryReply":
+				handleChatRequestMessageHistoryReply(jobj);
+				return true;
+			default:
+				return false;
+		}
+	}
+
 	@Override
 	public boolean onCommand(String resultFor, Command command) {
 		if (onGetChatMessages(resultFor, command)) {
@@ -280,6 +292,10 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		} else {
 			return false;
 		}
+	}
+
+	private void handleChatRequestMessageHistoryReply(JSONObject jobj) {
+		
 	}
 
 }

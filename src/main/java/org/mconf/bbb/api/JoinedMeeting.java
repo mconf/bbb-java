@@ -147,6 +147,7 @@ public class JoinedMeeting {
 			confname = (String) response.get("confname");
 			meetingID = (String) response.get("meetingID");
 			externUserID = (String) response.get("externUserID");
+			internalUserID = (String) response.get("internalUserID");
 			role = (String) response.get("role");
 			conference = (String) response.get("conference");
 			room = (String) response.get("room");
@@ -155,7 +156,6 @@ public class JoinedMeeting {
 			mode = (String) response.get("mode");
 			record = (String) response.get("record");
 			welcome = (String) response.get("welcome");
-			internalUserID = (String) response.get("internalUserID");
 //			guest = (String) response.get("guest");
 			// TODO: This shoud be checked if it's the same as the logoutUrl
 			server = (String) response.get("logoutUrl");

@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONObject;
+
 import org.jboss.netty.channel.Channel;
 import org.mconf.bbb.MainRtmpConnection;
 import org.mconf.bbb.Module;
@@ -278,6 +280,15 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 		listeners.put(p.getUserId(), p);			
 		for (OnListenerJoinedListener l : handler.getContext().getListenerJoinedListeners())
 			l.onListenerJoined(p);
+	}
+
+	public boolean onMessageFromServer(String msgName, JSONObject jobj) {
+		switch (msgName) {
+			case "msgName":
+				return true;
+			default:
+				return false;
+		}
 	}
 	
 }

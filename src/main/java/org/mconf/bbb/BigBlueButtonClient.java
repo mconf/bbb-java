@@ -25,7 +25,11 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
+
+import org.json.JSONObject;
+import org.json.JSONException;
 
 import org.jboss.netty.channel.Channel;
 import org.mconf.bbb.api.JoinServiceBase;
@@ -331,6 +335,29 @@ public class BigBlueButtonClient {
 			return true;
 		else {
 			log.warn("Unhandled onMessageFromServer: " + command.getArg(0));
+			return false;
+		}
+	}
+
+	public boolean onMessageFromServer090(Command command) {
+		System.out.println(command.toString());
+		String msgName = (String) command.getArg(0);
+		JSONObject jobj = null;
+
+		try {
+			Map<String, Object> map = (HashMap<String, Object>) command.getArg(1);
+			jobj = new JSONObject((String) map.get("msg"));
+//			System.out.println(jobj.toString());
+		} catch (JSONException je) {
+			System.out.println(je.toString());
+		}
+		if (usersModule.onMessageFromServer(msgName, jobj) ||
+				chatModule.onMessageFromServer(msgName, jobj) ||
+				listenersModule.onMessageFromServer(msgName, jobj))
+			return true;
+		else {
+			System.out.println("Unhandled onMessageFromServer: " + msgName);
+			log.warn("Unhandled onMessageFromServer: " + msgName);
 			return false;
 		}
 	}

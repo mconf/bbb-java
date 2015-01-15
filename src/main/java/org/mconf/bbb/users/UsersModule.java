@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.json.JSONObject;
+
 import org.jboss.netty.channel.Channel;
 import org.mconf.bbb.BigBlueButtonClient.OnKickUserListener;
 import org.mconf.bbb.BigBlueButtonClient.OnParticipantJoinedListener;
@@ -315,4 +317,19 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		return participantCount;
 	}
 
+	public boolean onMessageFromServer(String msgName, JSONObject jobj) {
+		switch (msgName) {
+			case "getUsersReply":
+				handleGetUsersReply(jobj);
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	private void handleGetUsersReply(JSONObject jobj) {
+		System.out.println(jobj.toString());
+		handler.getContext().createChatModule(handler, channel);
+		handler.getContext().createListenersModule(handler, channel);
+	}
 }
