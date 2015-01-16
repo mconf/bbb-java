@@ -69,13 +69,20 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		else
 			MESSAGE_ENCODING = MESSAGE_ENCODING_TYPED_OBJECT;
 		
-		publicChatSO = handler.getSharedObject("chatSO", false);
-		publicChatSO.addSharedObjectListener(this);
-		publicChatSO.connect(channel);
-		
-		privateChatSO = handler.getSharedObject(handler.getContext().getMyUserId(), false);
-		privateChatSO.addSharedObjectListener(this);
-		privateChatSO.connect(channel);
+		if (handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) ||
+			handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
+			System.out.println("Here we must start the Chat Module");
+			publicChatSO = null;
+			privateChatSO = null;
+		} else {
+			publicChatSO = handler.getSharedObject("chatSO", false);
+			publicChatSO.addSharedObjectListener(this);
+			publicChatSO.connect(channel);
+			
+			privateChatSO = handler.getSharedObject(handler.getContext().getMyUserId(), false);
+			privateChatSO.addSharedObjectListener(this);
+			privateChatSO.connect(channel);
+		}
 	}
 
 	@Override

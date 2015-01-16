@@ -33,6 +33,7 @@ import org.mconf.bbb.Module;
 import org.mconf.bbb.BigBlueButtonClient.OnListenerJoinedListener;
 import org.mconf.bbb.BigBlueButtonClient.OnListenerLeftListener;
 import org.mconf.bbb.BigBlueButtonClient.OnListenerStatusChangeListener;
+import org.mconf.bbb.api.ApplicationService;
 import org.red5.server.api.IAttributeStore;
 import org.red5.server.api.so.IClientSharedObject;
 import org.red5.server.api.so.ISharedObjectBase;
@@ -54,9 +55,15 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 	public ListenersModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
 		
-		voiceSO = handler.getSharedObject("meetMeUsersSO", false);
-		voiceSO.addSharedObjectListener(this);
-		voiceSO.connect(channel);
+		if (handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) ||
+			handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
+			System.out.println("Here we must start the Listeners Module");
+			voiceSO = null;
+		} else {
+			voiceSO = handler.getSharedObject("meetMeUsersSO", false);
+			voiceSO.addSharedObjectListener(this);
+			voiceSO.connect(channel);
+		}
 	}
 	
 	@Override
