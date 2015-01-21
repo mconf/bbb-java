@@ -244,7 +244,7 @@ public class MainRtmpConnection extends RtmpConnection {
 							break;
 						}
 					}
-//	                context.onCommand(resultFor, command);
+	                context.onCommand(resultFor, command);
                 	break;
 	            } else if (name.equals("_error")) {
 	                Map<String, Object> args = (Map<String, Object>) command.getArg(0);

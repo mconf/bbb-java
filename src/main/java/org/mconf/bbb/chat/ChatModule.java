@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.json.JSONObject;
-
 import org.jboss.netty.channel.Channel;
 import org.mconf.bbb.BigBlueButtonClient.OnPrivateChatMessageListener;
 import org.mconf.bbb.BigBlueButtonClient.OnPublicChatMessageListener;
@@ -52,6 +50,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	private static final Logger log = LoggerFactory.getLogger(ChatModule.class);
 
 	private final IClientSharedObject publicChatSO, privateChatSO;
+	private String joinServiceVersion;
 
 	private List<ChatMessage> publicChatMessages = Collections.synchronizedList(new ArrayList<ChatMessage>());
 	private Map<String, List<ChatMessage>> privateChatMessages = new ConcurrentHashMap<String, List<ChatMessage>>();
@@ -63,15 +62,16 @@ public class ChatModule extends Module implements ISharedObjectListener {
 
 	public ChatModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
-		
-		if (handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_7))
+
+		joinServiceVersion = handler.getContext().getJoinService().getApplicationService().getVersion();
+
+		if (joinServiceVersion.equals(ApplicationService.VERSION_0_7))
 			MESSAGE_ENCODING = MESSAGE_ENCODING_STRING;
 		else
 			MESSAGE_ENCODING = MESSAGE_ENCODING_TYPED_OBJECT;
 		
-		if (handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) ||
-			handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
-			System.out.println("Here we must start the Chat Module");
+		if (joinServiceVersion.equals(ApplicationService.VERSION_0_81) ||
+			joinServiceVersion.equals(ApplicationService.VERSION_0_9)) {
 			publicChatSO = null;
 			privateChatSO = null;
 		} else {
@@ -265,6 +265,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	}
 
 	public boolean onMessageFromServer(Command command) {
+		System.out.println(command);
 		String type = (String) command.getArg(0);
 		if (type.equals("ChatReceivePublicMessageCommand") || type.equals("ChatReceivePrivateMessageCommand")) {
 			onMessageReceived(command.getArg(1));
@@ -282,10 +283,20 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		}
 	}
 
-	public boolean onMessageFromServer(String msgName, JSONObject jobj) {
+	public boolean onMessageFromServer090(Command command) {
+		String msgName = (String) command.getArg(0);
 		switch (msgName) {
 			case "ChatRequestMessageHistoryReply":
-				handleChatRequestMessageHistoryReply(jobj);
+				System.out.println(msgName);
+				handleChatRequestMessageHistoryReply((Map<String, Object>) command.getArg(1));
+				return true;
+			case "ChatReceivePublicMessageCommand":
+				System.out.println(msgName);
+				handleChatReceivePublicMessageCommand((Map<String, Object>) command.getArg(1));
+				return true;
+			case "ChatReceivePrivateMessageCommand":
+				System.out.println(msgName);
+				handleChatReceivePrivateMessageCommand((Map<String, Object>) command.getArg(1));
 				return true;
 			default:
 				return false;
@@ -301,8 +312,15 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		}
 	}
 
-	private void handleChatRequestMessageHistoryReply(JSONObject jobj) {
-		
+	private void handleChatRequestMessageHistoryReply(Map<String, Object> msg) {
+		System.out.println(msg.toString());
 	}
 
+	private void handleChatReceivePublicMessageCommand(Map<String, Object> msg) {
+		System.out.println(msg.toString());
+	}
+
+	private void handleChatReceivePrivateMessageCommand(Map<String, Object> msg) {
+		System.out.println(msg.toString());
+	}
 }

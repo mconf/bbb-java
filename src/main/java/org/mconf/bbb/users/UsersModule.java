@@ -24,9 +24,11 @@ package org.mconf.bbb.users;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.json.JSONObject;
+import org.json.JSONException;
 
 import org.jboss.netty.channel.Channel;
 import org.mconf.bbb.BigBlueButtonClient.OnKickUserListener;
@@ -60,9 +62,15 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		
 		joinServiceVersion = handler.getContext().getJoinService().getApplicationService().getVersion();
 		
-		participantsSO = handler.getSharedObject("participantsSO", false);
-		participantsSO.addSharedObjectListener(this);
-		participantsSO.connect(channel);
+		if (joinServiceVersion.equals(ApplicationService.VERSION_0_81) ||
+			joinServiceVersion.equals(ApplicationService.VERSION_0_9)) {
+			participantsSO = null;
+			doQueryParticipants();
+		} else {
+			participantsSO = handler.getSharedObject("participantsSO", false);
+			participantsSO.addSharedObjectListener(this);
+			participantsSO.connect(channel);
+		}
 	}
 
 	@Override
@@ -190,16 +198,18 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		if (resultFor.equals("participants.getParticipants")) {
 			Map<String, Object> args = (Map<String, Object>) command.getArg(0);
 
-			participants.clear();
+			if (args != null) {
+				participants.clear();
 
-			@SuppressWarnings("unused")
-			int count = ((Double) args.get("count")).intValue();
+				@SuppressWarnings("unused")
+				int count = ((Double) args.get("count")).intValue();
 
-			Map<String, Object> participantsMap = (Map<String, Object>) args.get("participants");
+				Map<String, Object> participantsMap = (Map<String, Object>) args.get("participants");
 
-			for (Map.Entry<String, Object> entry : participantsMap.entrySet()) {
-				Participant p = new Participant((Map<String, Object>) entry.getValue(), joinServiceVersion);
-				onParticipantJoined(p);
+				for (Map.Entry<String, Object> entry : participantsMap.entrySet()) {
+					Participant p = new Participant((Map<String, Object>) entry.getValue(), joinServiceVersion);
+					onParticipantJoined(p);
+				}
 			}
 			return true;
 		}
@@ -317,10 +327,88 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		return participantCount;
 	}
 
-	public boolean onMessageFromServer(String msgName, JSONObject jobj) {
+	public boolean onMessageFromServer090(Command command) {
+		JSONObject jobj = null; // TODO: Remove this from here
+
+		String msgName = (String) command.getArg(0);
 		switch (msgName) {
 			case "getUsersReply":
+				System.out.println(msgName);
+
+				// TODO: Remove this from here
+				try {
+					Map<String, Object> map = (HashMap<String, Object>) command.getArg(1);
+					jobj = new JSONObject((String) map.get("msg"));
+				} catch (JSONException je) {
+					System.out.println(je.toString());
+				}
+				///////////////////////////////
+
 				handleGetUsersReply(jobj);
+				return true;
+			case "participantJoined":
+				System.out.println(msgName);
+				handleParticipantJoined(jobj);
+				return true;
+			case "participantLeft":
+				System.out.println(msgName);
+				handleParticipantLeft(jobj);
+				return true;
+			case "assignPresenterCallback":
+				System.out.println(msgName);
+				handleAssignPresenterCallback(jobj);
+				return true;
+			case "meetingEnded":
+				System.out.println(msgName);
+				handleLogout(jobj);
+				return true;
+			case "meetingHasEnded":
+				System.out.println(msgName);
+				handleMeetingHasEnded(jobj);
+				return true;
+			case "meetingState":
+				System.out.println(msgName);
+				handleMeetingState(jobj);
+				return true; 
+			case "participantStatusChange":
+				System.out.println(msgName);
+				handleParticipantStatusChange(jobj);
+				return true;
+			case "userRaisedHand":
+				System.out.println(msgName);
+				handleUserRaisedHand(jobj);
+				return true;
+			case "userLoweredHand":
+				System.out.println(msgName);
+				handleUserLoweredHand(jobj);
+				return true;
+			case "userSharedWebcam":
+				System.out.println(msgName);
+				handleUserSharedWebcam(jobj);
+				return true;
+			case "userUnsharedWebcam":
+				System.out.println(msgName);
+				handleUserUnsharedWebcam(jobj);
+				return true;
+			case "getRecordingStatusReply":
+				System.out.println(msgName);
+				handleGetRecordingStatusReply(jobj);
+				return true;
+			case "recordingStatusChanged":
+				System.out.println(msgName);
+				handleRecordingStatusChanged(jobj);
+				return true;
+			case "joinMeetingReply":
+				System.out.println(msgName);
+				handleJoinedMeeting(jobj);
+				return true;
+			case "user_listening_only":
+				System.out.println(msgName);
+				handleUserListeningOnly(jobj);
+				return true;
+			case "permissionsSettingsChanged":
+				System.out.println(msgName);
+				handlePermissionsSettingsChanged(jobj);
 				return true;
 			default:
 				return false;
@@ -328,8 +416,71 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleGetUsersReply(JSONObject jobj) {
-		System.out.println(jobj.toString());
-		handler.getContext().createChatModule(handler, channel);
-		handler.getContext().createListenersModule(handler, channel);
+//		handler.getContext().createChatModule(handler, channel);
+//		handler.getContext().createListenersModule(handler, channel);
+	}
+
+	private void handleParticipantJoined(JSONObject jobj) {
+
+	}
+
+	private void handleParticipantLeft(JSONObject jobj) {
+
+	}
+
+	private void handleAssignPresenterCallback(JSONObject jobj) {
+
+	}
+
+	private void handleLogout(JSONObject jobj) {
+
+	}
+
+	private void handleMeetingHasEnded(JSONObject jobj) {
+
+	}
+
+	private void handleMeetingState(JSONObject jobj) {
+
+	}
+
+	private void handleParticipantStatusChange(JSONObject jobj) {
+
+	}
+
+	private void handleUserRaisedHand(JSONObject jobj) {
+
+	}
+
+	private void handleUserLoweredHand(JSONObject jobj) {
+
+	}
+
+	private void handleUserSharedWebcam(JSONObject jobj) {
+
+	}
+
+	private void handleUserUnsharedWebcam(JSONObject jobj) {
+
+	}
+
+	private void handleGetRecordingStatusReply(JSONObject jobj) {
+
+	}
+
+	private void handleRecordingStatusChanged(JSONObject jobj) {
+
+	}
+
+	private void handleJoinedMeeting(JSONObject jobj) {
+
+	}
+
+	private void handleUserListeningOnly(JSONObject jobj) {
+
+	}
+
+	private void handlePermissionsSettingsChanged(JSONObject jobj) {
+
 	}
 }

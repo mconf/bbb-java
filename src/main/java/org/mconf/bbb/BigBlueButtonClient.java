@@ -341,23 +341,26 @@ public class BigBlueButtonClient {
 
 	public boolean onMessageFromServer090(Command command) {
 		System.out.println(command.toString());
+
+/*
 		String msgName = (String) command.getArg(0);
 		JSONObject jobj = null;
-
 		try {
 			Map<String, Object> map = (HashMap<String, Object>) command.getArg(1);
 			jobj = new JSONObject((String) map.get("msg"));
-//			System.out.println(jobj.toString());
+			System.out.println(jobj.toString());
 		} catch (JSONException je) {
 			System.out.println(je.toString());
 		}
-		if (usersModule.onMessageFromServer(msgName, jobj) ||
-				chatModule.onMessageFromServer(msgName, jobj) ||
-				listenersModule.onMessageFromServer(msgName, jobj))
+*/
+
+		if (usersModule.onMessageFromServer090(command) ||
+				chatModule.onMessageFromServer090(command) ||
+				listenersModule.onMessageFromServer090(command))
 			return true;
 		else {
-			System.out.println("Unhandled onMessageFromServer: " + msgName);
-			log.warn("Unhandled onMessageFromServer: " + msgName);
+			System.out.println("Unhandled onMessageFromServer: " + command.getArg(0));
+			log.warn("Unhandled onMessageFromServer: " + command.getArg(0));
 			return false;
 		}
 	}

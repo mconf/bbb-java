@@ -48,16 +48,18 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 	
 	private static final Logger log = LoggerFactory.getLogger(ListenersModule.class);
 	private final IClientSharedObject voiceSO;
+	private String joinServiceVersion;
 	
 	private Map<Integer, Listener> listeners = new HashMap<Integer, Listener>();
 	private boolean roomMuted;
 
 	public ListenersModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
+
+		joinServiceVersion = handler.getContext().getJoinService().getApplicationService().getVersion();
 		
-		if (handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) ||
-			handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
-			System.out.println("Here we must start the Listeners Module");
+		if (joinServiceVersion.equals(ApplicationService.VERSION_0_81) ||
+			joinServiceVersion.equals(ApplicationService.VERSION_0_9)) {
 			voiceSO = null;
 		} else {
 			voiceSO = handler.getSharedObject("meetMeUsersSO", false);
@@ -289,13 +291,51 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 			l.onListenerJoined(p);
 	}
 
-	public boolean onMessageFromServer(String msgName, JSONObject jobj) {
+	public boolean onMessageFromServer090(Command command) {
+		String msgName = (String) command.getArg(0);
 		switch (msgName) {
-			case "msgName":
+			case "userJoinedVoice":
+				System.out.println(msgName);
+				handleUserJoinedVoice();
+				return true;
+			case "userLeftVoice":
+				System.out.println(msgName);
+				handleUserLeftVoice();
+				return true;
+			case "voiceUserMuted":
+				System.out.println(msgName);
+				handleVoiceUserMuted();
+				return true;
+			case "voiceUserTalking":
+				System.out.println(msgName);
+				handleVoiceUserTalking();
+				return true;
+			case "meetingMuted":
+				System.out.println(msgName);
+				handleMeetingMuted();
 				return true;
 			default:
 				return false;
 		}
 	}
-	
+
+	private void handleUserJoinedVoice() {
+
+	}
+
+	private void handleUserLeftVoice() {
+
+	}
+
+	private void handleVoiceUserMuted() {
+
+	}
+
+	private void handleVoiceUserTalking() {
+
+	}
+
+	private void handleMeetingMuted() {
+
+	}
 }
