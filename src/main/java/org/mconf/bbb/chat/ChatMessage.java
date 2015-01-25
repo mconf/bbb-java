@@ -44,11 +44,21 @@ public class ChatMessage {
 	private String time;
 	private String language;
 	private String userId;
-	
+	private String chatType;
+	private String toUserID;
+	private String toUsername;
+	private int fromTimezoneOffset;
+	private long fromTime;
+
 	public ChatMessage() {
 		color = "0";
 		time = new SimpleDateFormat("HH:mm").format(System.currentTimeMillis());
 		language = "en";
+		chatType = "PUBLIC_CHAT";
+		toUserID = "public_chat_userid";
+		toUsername = "public_chat_username";
+		fromTimezoneOffset = 0;
+		fromTime = System.currentTimeMillis();
 	}
 	
 	public ChatMessage(Object object) {
@@ -96,12 +106,16 @@ public class ChatMessage {
 	private Object encodeTypedObject() {
 		Amf0Object obj = new Amf0Object();
 		obj.put("message", message);
-		obj.put("username", username);
-		obj.put("color", color);
-		obj.put("time", time);
-		obj.put("language", language);
-		obj.put("userid", userId);
 		obj.put("classname", "org.bigbluebutton.conference.service.chat.ChatObject");
+		obj.put("chatType", chatType);
+		obj.put("fromUserID", userId);
+		obj.put("fromUsername", username);
+		obj.put("fromColor", color);
+		obj.put("fromLang", language);
+		obj.put("fromTimezoneOffset", fromTimezoneOffset);
+		obj.put("fromTime", fromTime);
+		obj.put("toUserID", toUserID);
+		obj.put("toUsername", toUsername);
 		return obj;
 	}
 	
