@@ -28,9 +28,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 
-import org.json.JSONObject;
-import org.json.JSONException;
-
 import org.jboss.netty.channel.Channel;
 import org.mconf.bbb.api.JoinServiceBase;
 import org.mconf.bbb.api.JoinServiceProxy;
@@ -341,18 +338,6 @@ public class BigBlueButtonClient {
 
 	public boolean onMessageFromServer090(Command command) {
 		System.out.println(command.toString());
-
-/*
-		String msgName = (String) command.getArg(0);
-		JSONObject jobj = null;
-		try {
-			Map<String, Object> map = (HashMap<String, Object>) command.getArg(1);
-			jobj = new JSONObject((String) map.get("msg"));
-			System.out.println(jobj.toString());
-		} catch (JSONException je) {
-			System.out.println(je.toString());
-		}
-*/
 
 		if (usersModule.onMessageFromServer090(command) ||
 				chatModule.onMessageFromServer090(command) ||

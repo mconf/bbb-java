@@ -66,6 +66,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 			joinServiceVersion.equals(ApplicationService.VERSION_0_9)) {
 			participantsSO = null;
 			doQueryParticipants();
+			doAuthTokenValidation();
 		} else {
 			participantsSO = handler.getSharedObject("participantsSO", false);
 			participantsSO.addSharedObjectListener(this);
@@ -178,6 +179,16 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	public void onSharedObjectUpdate(ISharedObjectBase so,
 			Map<String, Object> values) {
 		log.debug("onSharedObjectUpdate 3");
+	}
+
+	private void doAuthTokenValidation() {
+		Command cmd = new CommandAmf0("validateToken", null, handler.getContext().getMyUserId());
+		handler.writeCommandExpectingResult(channel, cmd);
+	}
+
+	private void doJoinMeeting() {
+		Command cmd = new CommandAmf0("joinMeeting", null, handler.getContext().getMyUserId());
+		handler.writeCommandExpectingResult(channel, cmd);
 	}
 
 	/**
@@ -327,97 +338,113 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		return participantCount;
 	}
 
-	public boolean onMessageFromServer090(Command command) {
-		JSONObject jobj = null; // TODO: Remove this from here
+	private JSONObject parseJSON(Object msg) {
+		JSONObject jobj = null;
+		try {
+			Map<String, Object> map = (HashMap<String, Object>) msg;
+			jobj = new JSONObject((String) map.get("msg"));
+		} catch (JSONException je) {
+			System.out.println(je.toString());
+		}
+		return jobj;
+	}
 
+	public boolean onMessageFromServer090(Command command) {
 		String msgName = (String) command.getArg(0);
 		switch (msgName) {
+			case "validateAuthTokenReply":
+				System.out.println(msgName);
+				handleValidateAuthTokenReply(parseJSON(command.getArg(1)));
+				return true;
 			case "getUsersReply":
 				System.out.println(msgName);
-
-				// TODO: Remove this from here
-				try {
-					Map<String, Object> map = (HashMap<String, Object>) command.getArg(1);
-					jobj = new JSONObject((String) map.get("msg"));
-				} catch (JSONException je) {
-					System.out.println(je.toString());
-				}
-				///////////////////////////////
-
-				handleGetUsersReply(jobj);
+				handleGetUsersReply(parseJSON(command.getArg(1)));
 				return true;
 			case "participantJoined":
 				System.out.println(msgName);
-				handleParticipantJoined(jobj);
+				handleParticipantJoined(parseJSON(command.getArg(1)));
 				return true;
 			case "participantLeft":
 				System.out.println(msgName);
-				handleParticipantLeft(jobj);
+				handleParticipantLeft(parseJSON(command.getArg(1)));
 				return true;
 			case "assignPresenterCallback":
 				System.out.println(msgName);
-				handleAssignPresenterCallback(jobj);
+				handleAssignPresenterCallback(parseJSON(command.getArg(1)));
 				return true;
 			case "meetingEnded":
 				System.out.println(msgName);
-				handleLogout(jobj);
+				handleLogout(parseJSON(command.getArg(1)));
 				return true;
 			case "meetingHasEnded":
 				System.out.println(msgName);
-				handleMeetingHasEnded(jobj);
+				handleMeetingHasEnded(parseJSON(command.getArg(1)));
 				return true;
 			case "meetingState":
 				System.out.println(msgName);
-				handleMeetingState(jobj);
-				return true; 
+				handleMeetingState(parseJSON(command.getArg(1)));
+				return true;
 			case "participantStatusChange":
 				System.out.println(msgName);
-				handleParticipantStatusChange(jobj);
+				handleParticipantStatusChange(parseJSON(command.getArg(1)));
 				return true;
 			case "userRaisedHand":
 				System.out.println(msgName);
-				handleUserRaisedHand(jobj);
+				handleUserRaisedHand(parseJSON(command.getArg(1)));
 				return true;
 			case "userLoweredHand":
 				System.out.println(msgName);
-				handleUserLoweredHand(jobj);
+				handleUserLoweredHand(parseJSON(command.getArg(1)));
 				return true;
 			case "userSharedWebcam":
 				System.out.println(msgName);
-				handleUserSharedWebcam(jobj);
+				handleUserSharedWebcam(parseJSON(command.getArg(1)));
 				return true;
 			case "userUnsharedWebcam":
 				System.out.println(msgName);
-				handleUserUnsharedWebcam(jobj);
+				handleUserUnsharedWebcam(parseJSON(command.getArg(1)));
 				return true;
 			case "getRecordingStatusReply":
 				System.out.println(msgName);
-				handleGetRecordingStatusReply(jobj);
+				handleGetRecordingStatusReply(parseJSON(command.getArg(1)));
 				return true;
 			case "recordingStatusChanged":
 				System.out.println(msgName);
-				handleRecordingStatusChanged(jobj);
+				handleRecordingStatusChanged(parseJSON(command.getArg(1)));
 				return true;
 			case "joinMeetingReply":
 				System.out.println(msgName);
-				handleJoinedMeeting(jobj);
+				handleJoinedMeeting(parseJSON(command.getArg(1)));
 				return true;
 			case "user_listening_only":
 				System.out.println(msgName);
-				handleUserListeningOnly(jobj);
+				handleUserListeningOnly(parseJSON(command.getArg(1)));
 				return true;
 			case "permissionsSettingsChanged":
 				System.out.println(msgName);
-				handlePermissionsSettingsChanged(jobj);
+				handlePermissionsSettingsChanged(parseJSON(command.getArg(1)));
 				return true;
 			default:
 				return false;
 		}
 	}
 
+	private void handleValidateAuthTokenReply(JSONObject jobj) {
+		boolean valid = false;
+		try {
+			valid = (boolean) jobj.get("valid");
+		} catch (JSONException je) {
+			System.out.println(je.toString());
+		}
+		if (valid) {
+			doJoinMeeting();
+		} else {
+			log.error("Invalid AuthToken");
+		}
+	}
+
 	private void handleGetUsersReply(JSONObject jobj) {
-//		handler.getContext().createChatModule(handler, channel);
-//		handler.getContext().createListenersModule(handler, channel);
+
 	}
 
 	private void handleParticipantJoined(JSONObject jobj) {

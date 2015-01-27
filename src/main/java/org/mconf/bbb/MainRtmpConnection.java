@@ -122,10 +122,10 @@ public class MainRtmpConnection extends RtmpConnection {
 		List<Object> args = new ArrayList<Object>();
 		args.add(meeting.getFullname());
 		args.add(meeting.getRole());
-		if (!context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) &&
-			!context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9))
+		if (!isVersion(ApplicationService.VERSION_0_81) &&
+			!isVersion(ApplicationService.VERSION_0_9))
 			args.add(meeting.getConference());
-		if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_7))
+		if (isVersion(ApplicationService.VERSION_0_7))
 			args.add(meeting.getMode());
 		args.add(meeting.getRoom());
 		args.add(meeting.getVoicebridge());
@@ -135,8 +135,8 @@ public class MainRtmpConnection extends RtmpConnection {
 		if (meeting.isGuestDefined()) {
 			args.add(meeting.isGuest());
 		}
-		if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) ||
-			context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
+		if (isVersion(ApplicationService.VERSION_0_81) ||
+			isVersion(ApplicationService.VERSION_0_9)) {
 			args.add(context.getJoinService().getLockOnStart());
 			args.add(context.getJoinService().getMuteOnStart());
 			args.add(context.getJoinService().getLockSettings());
@@ -211,52 +211,22 @@ public class MainRtmpConnection extends RtmpConnection {
         	
 	        case COMMAND_AMF0:
 	        case COMMAND_AMF3:
-	            Command command = (Command) message;                
+	            Command command = (Command) message;
 	            String name = command.getName();
 	            log.debug("server command: {}", name);
-	            if(name.equals("_result")) {
-	                String resultFor = transactionToCommandMap.get(command.getTransactionId());
-	                if (resultFor == null) {
-	                	log.warn("result for method without tracked transaction");
-	                	break;
-	                }
-	                log.info("result for method call: {}", resultFor);
-					if(resultFor.equals("connect")) {
-						String code = connectGetCode(command);
-						if (code.equals("NetConnection.Connect.Success")) {
-							// TODO: Here we have to change and get this internalID directly from the bot
-							if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) ||
-								context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
-								setMyUserId(channel);
-								} else {
-									doGetMyUserId(channel);
-								}
-							} else {
-	                		log.error("method connect result in {}, quitting", code);
-	                		log.debug("connect response: {}", command.toString());
-	                		channel.close();
-	                	}
-	                	return;
-					} else if (!context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) &&
-								!context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
-						if (onGetMyUserId(resultFor, command)) {
-							context.createUsersModule(this, channel);
-							break;
-						}
-					}
-	                context.onCommand(resultFor, command);
-                	break;
-	            } else if (name.equals("_error")) {
-	                Map<String, Object> args = (Map<String, Object>) command.getArg(0);
-	                log.error(args.get("code").toString() + ": " + args.get("description").toString());
-	            } else if (name.equals("onMessageFromServer")) {
-	            	if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81) ||
-	            		context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_9)) {
-	            		context.onMessageFromServer090(command);
-	            	} else {
-	            		context.onMessageFromServer(command);
-	            	}
-	                break;
+	            switch (name) {
+	            	case "_result":
+	            		handleCommandResult(command, channel);
+	            		break;
+	            	case "_error":
+	            		handleCommandError(command);
+	            		break;
+	            	case "onMessageFromServer":
+	            		handleCommandMessageFromServer(command);
+	            		break;
+	            	default:
+	            		log.error("unknown command: {}", name);
+	            		break;
 	            }
 	            break;
 	            
@@ -272,5 +242,53 @@ public class MainRtmpConnection extends RtmpConnection {
 	
 	public boolean isConnected() {
 		return connected;
+	}
+
+	private void handleCommandResult(Command cmd, Channel channel) {
+		String resultFor = transactionToCommandMap.get(cmd.getTransactionId());
+
+		if (resultFor != null) {
+			log.info("result for method call: {}", resultFor);
+			if (resultFor.equals("connect")) {
+				String code = connectGetCode(cmd);
+				if (code.equals("NetConnection.Connect.Success")) {
+					if (isVersion(ApplicationService.VERSION_0_81) ||
+						isVersion(ApplicationService.VERSION_0_9)) {
+						setMyUserId(channel);
+					} else {
+						doGetMyUserId(channel);
+					}
+				} else {
+					log.error("method connect result in {}, quitting", code);
+					log.debug("connect response: {}", cmd.toString());
+					channel.close();
+				}
+			} else if (!isVersion(ApplicationService.VERSION_0_81) &&
+					!isVersion(ApplicationService.VERSION_0_9)) {
+				if (onGetMyUserId(resultFor, cmd)) {
+					context.createUsersModule(this, channel);
+				}
+			} else context.onCommand(resultFor, cmd);
+		} else log.warn("result for method without tracked transaction");
+	}
+
+	private void handleCommandError(Command cmd) {
+		Map<String, Object> args = (Map<String, Object>) cmd.getArg(0);
+		log.error(args.get("code").toString() + ": " + args.get("description").toString());
+	}
+
+	private void handleCommandMessageFromServer(Command cmd) {
+		if (isVersion(ApplicationService.VERSION_0_81) ||
+			isVersion(ApplicationService.VERSION_0_9)) {
+			context.onMessageFromServer090(cmd);
+		} else {
+			context.onMessageFromServer(cmd);
+		}
+	}
+
+	private boolean isVersion(String version) {
+		if (context.getJoinService().getApplicationService().getVersion().equals(version)) {
+			return true;
+		} else return false;
 	}
 }
