@@ -122,10 +122,10 @@ public class MainRtmpConnection extends RtmpConnection {
 		List<Object> args = new ArrayList<Object>();
 		args.add(meeting.getFullname());
 		args.add(meeting.getRole());
-		if (!isVersion(ApplicationService.VERSION_0_81) &&
-			!isVersion(ApplicationService.VERSION_0_9))
+		if (!version.equals(ApplicationService.VERSION_0_81) &&
+			!version.equals(ApplicationService.VERSION_0_9))
 			args.add(meeting.getConference());
-		if (isVersion(ApplicationService.VERSION_0_7))
+		if (version.equals(ApplicationService.VERSION_0_7))
 			args.add(meeting.getMode());
 		args.add(meeting.getRoom());
 		args.add(meeting.getVoicebridge());
@@ -135,8 +135,8 @@ public class MainRtmpConnection extends RtmpConnection {
 		if (meeting.isGuestDefined()) {
 			args.add(meeting.isGuest());
 		}
-		if (isVersion(ApplicationService.VERSION_0_81) ||
-			isVersion(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_81) ||
+			version.equals(ApplicationService.VERSION_0_9)) {
 			args.add(context.getJoinService().getLockOnStart());
 			args.add(context.getJoinService().getMuteOnStart());
 			args.add(context.getJoinService().getLockSettings());
@@ -252,8 +252,8 @@ public class MainRtmpConnection extends RtmpConnection {
 			if (resultFor.equals("connect")) {
 				String code = connectGetCode(cmd);
 				if (code.equals("NetConnection.Connect.Success")) {
-					if (isVersion(ApplicationService.VERSION_0_81) ||
-						isVersion(ApplicationService.VERSION_0_9)) {
+					if (version.equals(ApplicationService.VERSION_0_81) ||
+						version.equals(ApplicationService.VERSION_0_9)) {
 						setMyUserId(channel);
 					} else {
 						doGetMyUserId(channel);
@@ -263,8 +263,8 @@ public class MainRtmpConnection extends RtmpConnection {
 					log.debug("connect response: {}", cmd.toString());
 					channel.close();
 				}
-			} else if (!isVersion(ApplicationService.VERSION_0_81) &&
-					!isVersion(ApplicationService.VERSION_0_9)) {
+			} else if (!version.equals(ApplicationService.VERSION_0_81) &&
+					!version.equals(ApplicationService.VERSION_0_9)) {
 				if (onGetMyUserId(resultFor, cmd)) {
 					context.createUsersModule(this, channel);
 				}
@@ -278,17 +278,11 @@ public class MainRtmpConnection extends RtmpConnection {
 	}
 
 	private void handleCommandMessageFromServer(Command cmd) {
-		if (isVersion(ApplicationService.VERSION_0_81) ||
-			isVersion(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_81) ||
+			version.equals(ApplicationService.VERSION_0_9)) {
 			context.onMessageFromServer090(cmd);
 		} else {
 			context.onMessageFromServer(cmd);
 		}
-	}
-
-	private boolean isVersion(String version) {
-		if (context.getJoinService().getApplicationService().getVersion().equals(version)) {
-			return true;
-		} else return false;
 	}
 }

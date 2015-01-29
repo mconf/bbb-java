@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
+import org.json.JSONException;
 
 import org.jboss.netty.channel.Channel;
 import org.mconf.bbb.MainRtmpConnection;
@@ -48,19 +49,18 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 	
 	private static final Logger log = LoggerFactory.getLogger(ListenersModule.class);
 	private final IClientSharedObject voiceSO;
-	private String joinServiceVersion;
 	
 	private Map<Integer, Listener> listeners = new HashMap<Integer, Listener>();
 	private boolean roomMuted;
 
 	public ListenersModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
-
-		joinServiceVersion = handler.getContext().getJoinService().getApplicationService().getVersion();
 		
-		if (joinServiceVersion.equals(ApplicationService.VERSION_0_81) ||
-			joinServiceVersion.equals(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_81) ||
+			version.equals(ApplicationService.VERSION_0_9)) {
 			voiceSO = null;
+//			doGetCurrentUsers();
+//			doGetRoomMuteState();
 		} else {
 			voiceSO = handler.getSharedObject("meetMeUsersSO", false);
 			voiceSO.addSharedObjectListener(this);
@@ -296,46 +296,60 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 		switch (msgName) {
 			case "userJoinedVoice":
 				System.out.println(msgName);
-				handleUserJoinedVoice();
+				handleUserJoinedVoice(parseJSON(command.getArg(1)));
 				return true;
 			case "userLeftVoice":
 				System.out.println(msgName);
-				handleUserLeftVoice();
+				handleUserLeftVoice(parseJSON(command.getArg(1)));
 				return true;
 			case "voiceUserMuted":
 				System.out.println(msgName);
-				handleVoiceUserMuted();
+				handleVoiceUserMuted(parseJSON(command.getArg(1)));
 				return true;
 			case "voiceUserTalking":
 				System.out.println(msgName);
-				handleVoiceUserTalking();
+				handleVoiceUserTalking(parseJSON(command.getArg(1)));
 				return true;
 			case "meetingMuted":
 				System.out.println(msgName);
-				handleMeetingMuted();
+				handleMeetingMuted(parseJSON(command.getArg(1)));
+				return true;
+			case "meetingState":
+				System.out.println(msgName);
+				handleMeetingState(parseJSON(command.getArg(1)));
 				return true;
 			default:
 				return false;
 		}
 	}
 
-	private void handleUserJoinedVoice() {
+	private void handleMeetingState(JSONObject jobj) {
+		boolean meetingMuted = false;
+		try {
+			meetingMuted = jobj.getBoolean("meetingMuted");
+		} catch (JSONException je) {
+			System.out.println(je.toString());
+		}
+		roomMuted = meetingMuted;
+	}
+
+	private void handleUserJoinedVoice(JSONObject jobj) {
 
 	}
 
-	private void handleUserLeftVoice() {
+	private void handleUserLeftVoice(JSONObject jobj) {
 
 	}
 
-	private void handleVoiceUserMuted() {
+	private void handleVoiceUserMuted(JSONObject jobj) {
 
 	}
 
-	private void handleVoiceUserTalking() {
+	private void handleVoiceUserTalking(JSONObject jobj) {
 
 	}
 
-	private void handleMeetingMuted() {
+	private void handleMeetingMuted(JSONObject jobj) {
 
 	}
 }

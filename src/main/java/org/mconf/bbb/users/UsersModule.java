@@ -55,15 +55,12 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	private Map<String, Participant> participants = new ConcurrentHashMap<String, Participant>();
 	private int moderatorCount = 0, participantCount = 0;
-	private String joinServiceVersion;
 
 	public UsersModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
 		
-		joinServiceVersion = handler.getContext().getJoinService().getApplicationService().getVersion();
-		
-		if (joinServiceVersion.equals(ApplicationService.VERSION_0_81) ||
-			joinServiceVersion.equals(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_81) ||
+			version.equals(ApplicationService.VERSION_0_9)) {
 			participantsSO = null;
 			doQueryParticipants();
 			doAuthTokenValidation();
@@ -132,7 +129,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 				return;
 			}
 			if (method.equals("participantJoined")) {
-				Participant p = new Participant((Map<String, Object>) params.get(0), joinServiceVersion);
+				Participant p = new Participant((Map<String, Object>) params.get(0), version);
 				onParticipantJoined(p);
 				return;
 			}
@@ -218,7 +215,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 				Map<String, Object> participantsMap = (Map<String, Object>) args.get("participants");
 
 				for (Map.Entry<String, Object> entry : participantsMap.entrySet()) {
-					Participant p = new Participant((Map<String, Object>) entry.getValue(), joinServiceVersion);
+					Participant p = new Participant((Map<String, Object>) entry.getValue(), version);
 					onParticipantJoined(p);
 				}
 			}
@@ -275,38 +272,38 @@ public class UsersModule extends Module implements ISharedObjectListener {
 			return;
 		}
 		
-		if (joinServiceVersion.equals(ApplicationService.VERSION_0_7)) {
+		if (version.equals(ApplicationService.VERSION_0_7)) {
 			Command cmd = new CommandAmf0("presentation.assignPresenter", null, userId, p.getName(), 1);
 			handler.writeCommandExpectingResult(channel, cmd);
 		}
 		
-		else { //if (joinServiceVersion == JoinService0Dot8.class)
+		else { //if (version == JoinService0Dot8.class)
 			Command cmd = new CommandAmf0("participants.assignPresenter", null, userId, p.getName(), 1);
 			handler.writeCommandExpectingResult(channel, cmd);
 		}
 	}
 
 	public void addStream(String streamName) {
-		if (joinServiceVersion.equals(ApplicationService.VERSION_0_7)) {
+		if (version.equals(ApplicationService.VERSION_0_7)) {
 	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "streamName", streamName);
 	    	handler.writeCommandExpectingResult(channel, cmd);
 	    	
 	    	cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", true);
 	    	handler.writeCommandExpectingResult(channel, cmd);
-		} else { //if (joinServiceVersion == JoinService0Dot8.class) 
+		} else { //if (version == JoinService0Dot8.class)
 	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "true,stream=" + streamName);
 	    	handler.writeCommandExpectingResult(channel, cmd);
 		}
 	}
 
 	public void removeStream(String streamName) {
-		if (joinServiceVersion.equals(ApplicationService.VERSION_0_7)) {
+		if (version.equals(ApplicationService.VERSION_0_7)) {
 			Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "");
 			handler.writeCommandExpectingResult(channel, cmd);
 	
 			cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", false);
 			handler.writeCommandExpectingResult(channel, cmd);
-		} else { //if (joinServiceVersion == JoinService0Dot8.class) {
+		} else { //if (version == JoinService0Dot8.class) {
 	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "false,stream=" + streamName);
 	    	handler.writeCommandExpectingResult(channel, cmd);
 		}
@@ -336,17 +333,6 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	public int getParticipantCount() {
 		return participantCount;
-	}
-
-	private JSONObject parseJSON(Object msg) {
-		JSONObject jobj = null;
-		try {
-			Map<String, Object> map = (HashMap<String, Object>) msg;
-			jobj = new JSONObject((String) map.get("msg"));
-		} catch (JSONException je) {
-			System.out.println(je.toString());
-		}
-		return jobj;
 	}
 
 	public boolean onMessageFromServer090(Command command) {
@@ -379,10 +365,6 @@ public class UsersModule extends Module implements ISharedObjectListener {
 			case "meetingHasEnded":
 				System.out.println(msgName);
 				handleMeetingHasEnded(parseJSON(command.getArg(1)));
-				return true;
-			case "meetingState":
-				System.out.println(msgName);
-				handleMeetingState(parseJSON(command.getArg(1)));
 				return true;
 			case "participantStatusChange":
 				System.out.println(msgName);
@@ -432,7 +414,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	private void handleValidateAuthTokenReply(JSONObject jobj) {
 		boolean valid = false;
 		try {
-			valid = (boolean) jobj.get("valid");
+			valid = jobj.getBoolean("valid");
 		} catch (JSONException je) {
 			System.out.println(je.toString());
 		}
@@ -464,10 +446,6 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleMeetingHasEnded(JSONObject jobj) {
-
-	}
-
-	private void handleMeetingState(JSONObject jobj) {
 
 	}
 

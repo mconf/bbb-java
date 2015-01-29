@@ -50,7 +50,6 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	private static final Logger log = LoggerFactory.getLogger(ChatModule.class);
 
 	private final IClientSharedObject publicChatSO, privateChatSO;
-	private String joinServiceVersion;
 
 	private List<ChatMessage> publicChatMessages = Collections.synchronizedList(new ArrayList<ChatMessage>());
 	private Map<String, List<ChatMessage>> privateChatMessages = new ConcurrentHashMap<String, List<ChatMessage>>();
@@ -63,17 +62,16 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	public ChatModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
 
-		joinServiceVersion = handler.getContext().getJoinService().getApplicationService().getVersion();
-
-		if (joinServiceVersion.equals(ApplicationService.VERSION_0_7))
+		if (version.equals(ApplicationService.VERSION_0_7))
 			MESSAGE_ENCODING = MESSAGE_ENCODING_STRING;
 		else
 			MESSAGE_ENCODING = MESSAGE_ENCODING_TYPED_OBJECT;
 		
-		if (joinServiceVersion.equals(ApplicationService.VERSION_0_81) ||
-			joinServiceVersion.equals(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_81) ||
+			version.equals(ApplicationService.VERSION_0_9)) {
 			publicChatSO = null;
 			privateChatSO = null;
+//			get_chat_history_request
 		} else {
 			publicChatSO = handler.getSharedObject("chatSO", false);
 			publicChatSO.addSharedObjectListener(this);
@@ -159,7 +157,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	 */
 	public void doGetChatMessages() {
 		String commandName;
-		if (handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81)) {
+		if (version.equals(ApplicationService.VERSION_0_81)) {
 			commandName = "chat.sendPublicChatHistory";
 		} else {
 			commandName = "chat.getChatMessages";
