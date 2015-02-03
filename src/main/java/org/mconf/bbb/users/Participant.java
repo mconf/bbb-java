@@ -23,6 +23,9 @@ package org.mconf.bbb.users;
 
 import java.util.Map;
 
+import org.json.JSONObject;
+import org.json.JSONException;
+
 public class Participant implements IParticipant {
 
 	private Status status;
@@ -43,6 +46,10 @@ public class Participant implements IParticipant {
 	public Participant(Map<String, Object> param, String appServerVersion) {
 		decode(param, appServerVersion);
 	}
+
+	public Participant(JSONObject jobj, String appServerVersion) {
+		decode(jobj, appServerVersion);
+	}
 	
 	/*
 	 * example:
@@ -54,6 +61,25 @@ public class Participant implements IParticipant {
 		name = (String) param.get("name");
 		userid = UsersModule.getUserIdFromObject(param.get("userid"));
 		role = (String) param.get("role");
+	}
+
+	public void decode(JSONObject jobj, String appServerVersion) {
+		JSONObject voiceUser = null;
+		try {
+			status = new Status(jobj);
+			name = jobj.getString("name");
+			userid = jobj.getString("userId");
+			role = jobj.getString("role");
+
+			voiceUser = (JSONObject) jobj.get("voiceUser");
+
+			listener = voiceUser.getBoolean("joined");
+			muted = voiceUser.getBoolean("muted");
+			locked = voiceUser.getBoolean("locked");
+			talking = voiceUser.getBoolean("talking");
+		} catch (JSONException je) {
+			System.out.println(je.toString());
+		}
 	}
 
 	/* (non-Javadoc)
@@ -191,5 +217,5 @@ public class Participant implements IParticipant {
 
 	public void setTalking(boolean talking) {
 		this.talking = talking;
-	}	
+	}
 }

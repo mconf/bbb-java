@@ -79,13 +79,15 @@ public abstract class JoinServiceBase {
 			e.printStackTrace();
 			log.error("Can't get the url {}", createUrl);
 		}
-		
-		if (ParserUtils.getNodeValueFromResponse(response, "returncode").equals("SUCCESS"))
-			return E_OK;
-		else {
-			log.error("create response: {}", response);
-			return E_SERVER_UNREACHABLE;
+		if (getVersion() == ApplicationService.VERSION_0_9 ||
+				getVersion() == ApplicationService.VERSION_0_81) {
+			if (ParserUtils.getNodeValueFromResponse(response, "returncode").equals("SUCCESS"))
+				return E_OK;
+		} else {
+			if (meetingID.equals(response)) return E_OK;
 		}
+		log.error("create response: {}", response);
+		return E_SERVER_UNREACHABLE;
 	}
 
 	public int load() { //.

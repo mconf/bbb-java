@@ -25,6 +25,9 @@ import java.util.Map;
 
 import org.mconf.bbb.api.ApplicationService;
 
+import org.json.JSONObject;
+import org.json.JSONException;
+
 public class Status {
 
 	private boolean raiseHand;
@@ -35,6 +38,20 @@ public class Status {
 
 	public Status(Map<String, Object> param, String appServerVersion) {
 		decode(param, appServerVersion);
+	}
+
+	public Status(JSONObject jobj) {
+		try {
+			raiseHand = jobj.getBoolean("raiseHand");
+			hasStream = jobj.getBoolean("hasStream");
+			presenter = jobj.getBoolean("presenter");
+			// TODO: Check this
+			streamName = jobj.getString("webcamStream");
+			mood = "";
+//			mood = jobj.getString("mood");
+		} catch (JSONException je) {
+			System.out.println(je.toString());
+		}
 	}
 	
 	public Status() {

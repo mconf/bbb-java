@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.json.JSONObject;
+import org.json.JSONArray;
 import org.json.JSONException;
 
 import org.jboss.netty.channel.Channel;
@@ -340,71 +341,71 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		switch (msgName) {
 			case "validateAuthTokenReply":
 				System.out.println(msgName);
-				handleValidateAuthTokenReply(parseJSON(command.getArg(1)));
+				handleValidateAuthTokenReply(getMessage(command.getArg(1)));
 				return true;
 			case "getUsersReply":
 				System.out.println(msgName);
-				handleGetUsersReply(parseJSON(command.getArg(1)));
+				handleGetUsersReply(getMessage(command.getArg(1)));
 				return true;
 			case "participantJoined":
 				System.out.println(msgName);
-				handleParticipantJoined(parseJSON(command.getArg(1)));
+				handleParticipantJoined(getMessage(command.getArg(1)));
 				return true;
 			case "participantLeft":
 				System.out.println(msgName);
-				handleParticipantLeft(parseJSON(command.getArg(1)));
+				handleParticipantLeft(getMessage(command.getArg(1)));
 				return true;
 			case "assignPresenterCallback":
 				System.out.println(msgName);
-				handleAssignPresenterCallback(parseJSON(command.getArg(1)));
+				handleAssignPresenterCallback(getMessage(command.getArg(1)));
 				return true;
 			case "meetingEnded":
 				System.out.println(msgName);
-				handleLogout(parseJSON(command.getArg(1)));
+				handleLogout(getMessage(command.getArg(1)));
 				return true;
 			case "meetingHasEnded":
 				System.out.println(msgName);
-				handleMeetingHasEnded(parseJSON(command.getArg(1)));
+				handleMeetingHasEnded(getMessage(command.getArg(1)));
 				return true;
 			case "participantStatusChange":
 				System.out.println(msgName);
-				handleParticipantStatusChange(parseJSON(command.getArg(1)));
+				handleParticipantStatusChange(getMessage(command.getArg(1)));
 				return true;
 			case "userRaisedHand":
 				System.out.println(msgName);
-				handleUserRaisedHand(parseJSON(command.getArg(1)));
+				handleUserRaisedHand(getMessage(command.getArg(1)));
 				return true;
 			case "userLoweredHand":
 				System.out.println(msgName);
-				handleUserLoweredHand(parseJSON(command.getArg(1)));
+				handleUserLoweredHand(getMessage(command.getArg(1)));
 				return true;
 			case "userSharedWebcam":
 				System.out.println(msgName);
-				handleUserSharedWebcam(parseJSON(command.getArg(1)));
+				handleUserSharedWebcam(getMessage(command.getArg(1)));
 				return true;
 			case "userUnsharedWebcam":
 				System.out.println(msgName);
-				handleUserUnsharedWebcam(parseJSON(command.getArg(1)));
+				handleUserUnsharedWebcam(getMessage(command.getArg(1)));
 				return true;
 			case "getRecordingStatusReply":
 				System.out.println(msgName);
-				handleGetRecordingStatusReply(parseJSON(command.getArg(1)));
+				handleGetRecordingStatusReply(getMessage(command.getArg(1)));
 				return true;
 			case "recordingStatusChanged":
 				System.out.println(msgName);
-				handleRecordingStatusChanged(parseJSON(command.getArg(1)));
+				handleRecordingStatusChanged(getMessage(command.getArg(1)));
 				return true;
 			case "joinMeetingReply":
 				System.out.println(msgName);
-				handleJoinedMeeting(parseJSON(command.getArg(1)));
+				handleJoinedMeeting(getMessage(command.getArg(1)));
 				return true;
 			case "user_listening_only":
 				System.out.println(msgName);
-				handleUserListeningOnly(parseJSON(command.getArg(1)));
+				handleUserListeningOnly(getMessage(command.getArg(1)));
 				return true;
 			case "permissionsSettingsChanged":
 				System.out.println(msgName);
-				handlePermissionsSettingsChanged(parseJSON(command.getArg(1)));
+				handlePermissionsSettingsChanged(getMessage(command.getArg(1)));
 				return true;
 			default:
 				return false;
@@ -412,12 +413,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleValidateAuthTokenReply(JSONObject jobj) {
-		boolean valid = false;
-		try {
-			valid = jobj.getBoolean("valid");
-		} catch (JSONException je) {
-			System.out.println(je.toString());
-		}
+		boolean valid = (boolean) getFromMessage(jobj, "valid");
 		if (valid) {
 			doJoinMeeting();
 		} else {
@@ -426,11 +422,23 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleGetUsersReply(JSONObject jobj) {
+		participants.clear();
 
+		JSONArray users = (JSONArray) getFromMessage(jobj, "users");
+
+		for (int i = 0; i < users.length(); i++) {
+			try {
+				Participant p = new Participant(users.getJSONObject(i), version);
+				onParticipantJoined(p);
+			} catch (JSONException je) {
+				System.out.println(je.toString());
+			}
+		}
 	}
 
 	private void handleParticipantJoined(JSONObject jobj) {
-
+		Participant participant = new Participant((JSONObject) getFromMessage(jobj, "user"), version);
+		onParticipantJoined(participant);
 	}
 
 	private void handleParticipantLeft(JSONObject jobj) {

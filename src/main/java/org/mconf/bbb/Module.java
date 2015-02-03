@@ -44,7 +44,7 @@ public abstract class Module {
 	
 	abstract public boolean onCommand(String resultFor, Command command);
 
-	protected JSONObject parseJSON(Object msg) {
+	protected JSONObject getMessage(Object msg) {
 		JSONObject jobj = null;
 		try {
 			Map<String, Object> map = (HashMap<String, Object>) msg;
@@ -55,4 +55,13 @@ public abstract class Module {
 		return jobj;
 	}
 
+	protected Object getFromMessage(JSONObject msg, String attribute) {
+		Object obj = null;
+		try {
+			obj = (Object) msg.get(attribute);
+		} catch (JSONException je) {
+			System.out.println(je.toString());
+		}
+		return obj;
+	}
 }

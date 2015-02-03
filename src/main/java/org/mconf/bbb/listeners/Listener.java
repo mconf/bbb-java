@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.json.JSONObject;
+import org.json.JSONException;
+
 public class Listener implements IListener {
 	private int userId;
 	private String participantId;
@@ -31,7 +34,20 @@ public class Listener implements IListener {
 		muted = (Boolean) attributes.get("muted");					
 		locked = (Boolean) attributes.get("locked");
 	}
-	
+
+	public Listener(JSONObject jobj) {
+		try {
+			userId = Integer.parseInt(jobj.getString("userId"));
+			participantId = jobj.getString("webUserId");
+			cidName = jobj.getString("callerName");
+			cidNum = jobj.getString("callerNum");
+			muted = jobj.getBoolean("muted");
+			talking = jobj.getBoolean("talking");
+			locked = jobj.getBoolean("locked");
+		} catch (JSONException je) {
+			System.out.println(je.toString());
+		}
+	}
 	
 	/* (non-Javadoc)
 	 * @see org.mconf.bbb.listeners.IListener#setUserId(int)

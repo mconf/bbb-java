@@ -296,27 +296,27 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 		switch (msgName) {
 			case "userJoinedVoice":
 				System.out.println(msgName);
-				handleUserJoinedVoice(parseJSON(command.getArg(1)));
+				handleUserJoinedVoice(getMessage(command.getArg(1)));
 				return true;
 			case "userLeftVoice":
 				System.out.println(msgName);
-				handleUserLeftVoice(parseJSON(command.getArg(1)));
+				handleUserLeftVoice(getMessage(command.getArg(1)));
 				return true;
 			case "voiceUserMuted":
 				System.out.println(msgName);
-				handleVoiceUserMuted(parseJSON(command.getArg(1)));
+				handleVoiceUserMuted(getMessage(command.getArg(1)));
 				return true;
 			case "voiceUserTalking":
 				System.out.println(msgName);
-				handleVoiceUserTalking(parseJSON(command.getArg(1)));
+				handleVoiceUserTalking(getMessage(command.getArg(1)));
 				return true;
 			case "meetingMuted":
 				System.out.println(msgName);
-				handleMeetingMuted(parseJSON(command.getArg(1)));
+				handleMeetingMuted(getMessage(command.getArg(1)));
 				return true;
 			case "meetingState":
 				System.out.println(msgName);
-				handleMeetingState(parseJSON(command.getArg(1)));
+				handleMeetingState(getMessage(command.getArg(1)));
 				return true;
 			default:
 				return false;
@@ -324,17 +324,14 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleMeetingState(JSONObject jobj) {
-		boolean meetingMuted = false;
-		try {
-			meetingMuted = jobj.getBoolean("meetingMuted");
-		} catch (JSONException je) {
-			System.out.println(je.toString());
-		}
-		roomMuted = meetingMuted;
+
 	}
 
 	private void handleUserJoinedVoice(JSONObject jobj) {
-
+		JSONObject user = (JSONObject) getFromMessage(jobj, "user");
+		Listener l = new Listener((JSONObject) getFromMessage(user, "voiceUser"));
+		onListenerJoined(l);
+		// We need to set the participant as a listener here?
 	}
 
 	private void handleUserLeftVoice(JSONObject jobj) {
