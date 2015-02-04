@@ -103,6 +103,13 @@ public class BigBlueButtonClient {
 		listenersModule = new ListenersModule(handler, channel);
 	}
 
+	public boolean areModulesCreated() {
+		if (listenersModule == null || chatModule == null)
+			return false;
+		else
+			return true;
+	}
+
 	public ListenersModule getListenersModule() {
 		return listenersModule;
 	}
@@ -337,11 +344,11 @@ public class BigBlueButtonClient {
 	}
 
 	public boolean onMessageFromServer090(Command command) {
-		System.out.println(command.toString());
+//		System.out.println(command.toString());
 
 		if (usersModule.onMessageFromServer090(command) ||
-				chatModule.onMessageFromServer090(command) ||
-				listenersModule.onMessageFromServer090(command))
+				listenersModule.onMessageFromServer090(command) ||
+				chatModule.onMessageFromServer090(command))
 			return true;
 		else {
 			System.out.println("Unhandled onMessageFromServer: " + command.getArg(0));

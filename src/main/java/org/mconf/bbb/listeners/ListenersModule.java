@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
+import org.json.JSONArray;
 import org.json.JSONException;
 
 import org.jboss.netty.channel.Channel;
@@ -59,8 +60,6 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 		if (version.equals(ApplicationService.VERSION_0_81) ||
 			version.equals(ApplicationService.VERSION_0_9)) {
 			voiceSO = null;
-//			doGetCurrentUsers();
-//			doGetRoomMuteState();
 		} else {
 			voiceSO = handler.getSharedObject("meetMeUsersSO", false);
 			voiceSO.addSharedObjectListener(this);
@@ -291,31 +290,45 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 			l.onListenerJoined(p);
 	}
 
+	private Listener getJoinedVoiceUser(JSONObject jobj) {
+		Listener l = null;
+		JSONObject voiceUser = (JSONObject) getFromMessage(jobj, "voiceUser");
+		boolean joined = (boolean) getFromMessage(voiceUser, "joined");
+
+		if (joined) l = new Listener(jobj);
+
+		return l;
+	}
+
 	public boolean onMessageFromServer090(Command command) {
 		String msgName = (String) command.getArg(0);
 		switch (msgName) {
+			case "getUsersReply":
+				System.out.println("LISTENERS MODULE: " + msgName);
+				handleGetUsersReply(getMessage(command.getArg(1)));
+				return true;
 			case "userJoinedVoice":
-				System.out.println(msgName);
+				System.out.println("LISTENERS MODULE: " + msgName);
 				handleUserJoinedVoice(getMessage(command.getArg(1)));
 				return true;
 			case "userLeftVoice":
-				System.out.println(msgName);
+				System.out.println("LISTENERS MODULE: " + msgName);
 				handleUserLeftVoice(getMessage(command.getArg(1)));
 				return true;
 			case "voiceUserMuted":
-				System.out.println(msgName);
+				System.out.println("LISTENERS MODULE: " + msgName);
 				handleVoiceUserMuted(getMessage(command.getArg(1)));
 				return true;
 			case "voiceUserTalking":
-				System.out.println(msgName);
+				System.out.println("LISTENERS MODULE: " + msgName);
 				handleVoiceUserTalking(getMessage(command.getArg(1)));
 				return true;
 			case "meetingMuted":
-				System.out.println(msgName);
+				System.out.println("LISTENERS MODULE: " + msgName);
 				handleMeetingMuted(getMessage(command.getArg(1)));
 				return true;
 			case "meetingState":
-				System.out.println(msgName);
+				System.out.println("LISTENERS MODULE: " + msgName);
 				handleMeetingState(getMessage(command.getArg(1)));
 				return true;
 			default:
@@ -323,15 +336,28 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 		}
 	}
 
-	private void handleMeetingState(JSONObject jobj) {
+	private void handleGetUsersReply(JSONObject jobj) {
+		JSONArray users = (JSONArray) getFromMessage(jobj, "users");
 
+		listeners.clear();
+		for (int i = 0; i < users.length(); i++) {
+			try {
+				Listener l = getJoinedVoiceUser(users.getJSONObject(i));
+				if (l != null) onListenerJoined(l);
+			} catch (JSONException je) {
+				System.out.println(je.toString());
+			}
+		}
+	}
+
+	private void handleMeetingState(JSONObject jobj) {
+		roomMuted = (boolean) getFromMessage(jobj, "meetingMuted");
 	}
 
 	private void handleUserJoinedVoice(JSONObject jobj) {
 		JSONObject user = (JSONObject) getFromMessage(jobj, "user");
 		Listener l = new Listener((JSONObject) getFromMessage(user, "voiceUser"));
 		onListenerJoined(l);
-		// We need to set the participant as a listener here?
 	}
 
 	private void handleUserLeftVoice(JSONObject jobj) {
