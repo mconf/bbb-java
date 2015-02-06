@@ -180,13 +180,10 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void doAuthTokenValidation() {
-		Command cmd = new CommandAmf0("validateToken", null, handler.getContext().getMyUserId());
-		handler.writeCommandExpectingResult(channel, cmd);
-	}
-
-	private void doJoinMeeting() {
-		Command cmd = new CommandAmf0("joinMeeting", null, handler.getContext().getMyUserId());
-		handler.writeCommandExpectingResult(channel, cmd);
+		Map<String, String> message = new HashMap<String, String>();
+		message.put("userId", handler.getContext().getJoinService().getJoinedMeeting().getInternalUserID());
+		message.put("authToken", handler.getContext().getJoinService().getJoinedMeeting().getAuthToken());
+		Command cmd = new CommandAmf0("validateToken", null, message);
 	}
 
 	/**
@@ -420,9 +417,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	private void handleValidateAuthTokenReply(JSONObject jobj) {
 		boolean valid = (boolean) getFromMessage(jobj, "valid");
-		if (valid) {
-			doJoinMeeting();
-		} else {
+		if (!valid) {
 			log.error("Invalid AuthToken");
 		}
 	}

@@ -43,6 +43,8 @@ public class JoinedMeeting {
 	private String confname;
 	private String meetingID;
 	private String externUserID;
+	private String internalUserID;
+	private String authToken;
 	private String role;
 	private String conference;
 	private String room;
@@ -53,7 +55,7 @@ public class JoinedMeeting {
 	private String welcome;
 	private String message;
 	private String server;
-	private String internalUserID;
+
 	// guest is a new feature added on Mconf-Live 0.2
 	private String guest = "";
 
@@ -110,33 +112,34 @@ public class JoinedMeeting {
 	}
 
 	/*
-	 * {
-	 * "response":
-	 * 	{
-	 * 	"returncode":"SUCCESS",
-	 * 	"fullname":"Bot 1",
-	 * 	"confname":"",
-	 * 	"meetingID":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1418654380325",
-	 * 	"externMeetingID":"Test meeting 001",
-	 * 	"externUserID":"lqlzoio0wuda",
-	 * 	"internalUserID":"lqlzoio0wuda",
-	 * 	"role":"VIEWER",
-	 * 	"conference":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1418654380325",
-	 * 	"room":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1418654380325",
-	 * 	"voicebridge":"82736",
-	 * 	"dialnumber":"613-555-1234",
-	 * 	"webvoiceconf":"82736",
-	 * 	"mode":"LIVE",
-	 * 	"record":"false",
-	 * 	"allowStartStopRecording":true,
-	 * 	"welcome":"<br>Welcome to <b><\u002fb>!<br><br>For help on using BigBlueButton see these (short) <a href=\"event:http://www.bigbluebutton.org/content/videos\"><u>tutorial videos<\u002fu><\u002fa>.<br><br>To join the audio bridge click the headset icon (upper-left hand corner).  Use a headset to avoid causing background noise for others.<br><br><br>This server is running a build of <a href=\"https://code.google.com/p/bigbluebutton/wiki/090Overview\" target=\"_blank\"><u>BigBlueButton 0.9.0-beta<\u002fu><\u002fa>.",
-	 * 	"logoutUrl":"http://10.0.3.100",
-	 * 	"defaultLayout":"NOLAYOUT",
-	 * 	"avatarURL":"http://10.0.3.100/client/avatar.png",
-	 * 	"customdata":[]
-	 * 	}
-	 * }
-	 */
+	{
+	"response":
+	 {
+	 "returncode":"SUCCESS",
+	 "fullname":"Bot 1",
+	 "confname":"",
+	 "meetingID":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1423161802071",
+	 "externMeetingID":"Test meeting 001",
+	 "externUserID":"pzsgyuedcjq0",
+	 "internalUserID":"pzsgyuedcjq0_1",
+	 "authToken":"xgdlk7skxxfx",
+	 "role":"VIEWER",
+	 "conference":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1423161802071",
+	 "room":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1423161802071",
+	 "voicebridge":"53822",
+	 "dialnumber":"613-555-1234",
+	 "webvoiceconf":"53822",
+	 "mode":"LIVE",
+	 "record":"false",
+	 "allowStartStopRecording":true,
+	 "welcome":"<br>Welcome to <b><\u002fb>!<br><br>For help on using BigBlueButton see these (short) <a href=\"event:http://www.bigbluebutton.org/content/videos\"><u>tutorial videos<\u002fu><\u002fa>.<br><br>To join the audio bridge click the headset icon (upper-left hand corner).  Use a headset to avoid causing background noise for others.<br><br><br>This server is running a build of <a href=\"https://code.google.com/p/bigbluebutton/wiki/090Overview\" target=\"_blank\"><u>BigBlueButton 0.9.0-beta<\u002fu><\u002fa>.",
+	 "logoutUrl":"http://10.0.3.100",
+	 "defaultLayout":"NOLAYOUT",
+	 "avatarURL":"http://10.0.3.100/client/avatar.png",
+	 "customdata":[]
+	 }
+	}
+	*/
 	public void parseJSON(String str) throws JSONException {
 		JSONObject obj = new JSONObject(new JSONTokener(str));
 		JSONObject response = (JSONObject) obj.get("response");
@@ -148,6 +151,7 @@ public class JoinedMeeting {
 			meetingID = (String) response.get("meetingID");
 			externUserID = (String) response.get("externUserID");
 			internalUserID = (String) response.get("internalUserID");
+			authToken = (String) response.get("authToken");
 			role = (String) response.get("role");
 			conference = (String) response.get("conference");
 			room = (String) response.get("room");
@@ -276,5 +280,13 @@ public class JoinedMeeting {
 
 	public void setInternalUserID(String internalUserID) {
 		this.internalUserID = internalUserID;
+	}
+
+	public String getAuthToken() {
+		return authToken;
+	}
+
+	public void setAuthToken(String authToken) {
+		this.authToken = authToken;
 	}
 }

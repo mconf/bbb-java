@@ -295,7 +295,7 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 		JSONObject voiceUser = (JSONObject) getFromMessage(jobj, "voiceUser");
 		boolean joined = (boolean) getFromMessage(voiceUser, "joined");
 
-		if (joined) l = new Listener(jobj);
+		if (joined) l = new Listener(voiceUser);
 
 		return l;
 	}

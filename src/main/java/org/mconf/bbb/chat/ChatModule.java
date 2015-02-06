@@ -71,7 +71,9 @@ public class ChatModule extends Module implements ISharedObjectListener {
 			version.equals(ApplicationService.VERSION_0_9)) {
 			publicChatSO = null;
 			privateChatSO = null;
-//			get_chat_history_request
+			publicChatMessages.clear();
+			privateChatMessages.clear();
+			doGetChatMessages();
 		} else {
 			publicChatSO = handler.getSharedObject("chatSO", false);
 			publicChatSO.addSharedObjectListener(this);
