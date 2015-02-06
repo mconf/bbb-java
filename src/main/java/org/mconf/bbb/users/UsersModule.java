@@ -184,6 +184,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		message.put("userId", handler.getContext().getJoinService().getJoinedMeeting().getInternalUserID());
 		message.put("authToken", handler.getContext().getJoinService().getJoinedMeeting().getAuthToken());
 		Command cmd = new CommandAmf0("validateToken", null, message);
+		handler.writeCommandExpectingResult(channel, cmd);
 	}
 
 	/**
