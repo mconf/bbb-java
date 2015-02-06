@@ -135,8 +135,7 @@ public class MainRtmpConnection extends RtmpConnection {
 		if (meeting.isGuestDefined()) {
 			args.add(meeting.isGuest());
 		}
-		if (version.equals(ApplicationService.VERSION_0_81) ||
-			version.equals(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_9)) {
 			args.add(context.getJoinService().getLockOnStart());
 			args.add(context.getJoinService().getMuteOnStart());
 			args.add(context.getJoinService().getLockSettings());
@@ -252,8 +251,7 @@ public class MainRtmpConnection extends RtmpConnection {
 			if (resultFor.equals("connect")) {
 				String code = connectGetCode(cmd);
 				if (code.equals("NetConnection.Connect.Success")) {
-					if (version.equals(ApplicationService.VERSION_0_81) ||
-						version.equals(ApplicationService.VERSION_0_9)) {
+					if (version.equals(ApplicationService.VERSION_0_9)) {
 						setMyUserId(channel);
 					} else {
 						doGetMyUserId(channel);
@@ -263,8 +261,7 @@ public class MainRtmpConnection extends RtmpConnection {
 					log.debug("connect response: {}", cmd.toString());
 					channel.close();
 				}
-			} else if (!version.equals(ApplicationService.VERSION_0_81) &&
-					!version.equals(ApplicationService.VERSION_0_9)) {
+			} else if (!version.equals(ApplicationService.VERSION_0_9)) {
 				if (onGetMyUserId(resultFor, cmd)) {
 					context.createUsersModule(this, channel);
 				}
@@ -278,8 +275,7 @@ public class MainRtmpConnection extends RtmpConnection {
 	}
 
 	private void handleCommandMessageFromServer(Command cmd) {
-		if (version.equals(ApplicationService.VERSION_0_81) ||
-			version.equals(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_9)) {
 			context.onMessageFromServer090(cmd);
 		} else {
 			context.onMessageFromServer(cmd);

@@ -3,10 +3,6 @@ package org.mconf.bbb.api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public class JoinService0Dot81 extends JoinServiceBase {
 	private static final Logger log = LoggerFactory.getLogger(JoinService0Dot8.class);
 
@@ -62,49 +58,5 @@ public class JoinService0Dot81 extends JoinServiceBase {
 	@Override
 	protected int join(String joinUrl) {
 		return standardJoin(joinUrl);
-	}
-
-	@Override
-	public int setServerConfiguration() {
-		String configAddress = serverUrl + "/client/conf/config.xml";
-
-		log.debug("Trying to fetch {}", configAddress);
-		try {
-			serverConfig = new BbbServerConfig(getUrl(configAddress));
-		} catch (Exception e) {
-			log.error("Couldn't get config.xml");
-			return E_CANNOT_GET_CONFIGXML;
-		}
-
-		return E_OK;
-	}
-
-	@Override
-	public void setServer(String serverUrl) {
-		Pattern pattern = Pattern.compile("(.*):(\\d*)");
-		Matcher matcher = pattern.matcher(serverUrl);
-		if (matcher.matches()) {
-			this.serverUrl = matcher.group(1);
-			this.serverPort = Integer.parseInt(matcher.group(2));
-		} else {
-			this.serverUrl = serverUrl;
-			this.serverPort = 80;
-		}
-		setServerConfiguration();
-	}
-
-	@Override
-	public Map<String, Object> getLockSettings() {
-		return serverConfig.getLockSettings();
-	}
-
-	@Override
-	public boolean getLockOnStart() {
-		return serverConfig.getLockOnStart();
-	}
-
-	@Override
-	public boolean getMuteOnStart() {
-		return serverConfig.getMuteOnStart();
 	}
 }

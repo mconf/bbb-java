@@ -60,8 +60,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	public UsersModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
 		
-		if (version.equals(ApplicationService.VERSION_0_81) ||
-			version.equals(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_9)) {
 			participantsSO = null;
 			doQueryParticipants();
 			doAuthTokenValidation();
