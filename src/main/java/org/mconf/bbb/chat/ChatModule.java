@@ -265,7 +265,6 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	}
 
 	public boolean onMessageFromServer(Command command) {
-		System.out.println(command);
 		String type = (String) command.getArg(0);
 		if (type.equals("ChatReceivePublicMessageCommand") || type.equals("ChatReceivePrivateMessageCommand")) {
 			onMessageReceived(command.getArg(1));

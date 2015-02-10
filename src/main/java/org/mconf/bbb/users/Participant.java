@@ -217,5 +217,5 @@ public class Participant implements IParticipant {
 
 	public void setTalking(boolean talking) {
 		this.talking = talking;
-	}
+	}	
 }

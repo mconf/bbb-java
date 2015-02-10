@@ -52,7 +52,6 @@ public abstract class JoinServiceBase {
 	protected BbbServerConfig serverConfig = null;
 	
 	public abstract String getVersion();
-	
 	protected abstract String getCreateMeetingUrl(String meetingID);
 	protected abstract String getLoadUrl();
 	protected abstract String getJoinUrl(Meeting meeting, String name, boolean moderator);

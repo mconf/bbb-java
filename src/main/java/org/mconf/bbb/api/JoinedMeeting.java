@@ -43,7 +43,6 @@ public class JoinedMeeting {
 	private String confname;
 	private String meetingID;
 	private String externUserID;
-	private String internalUserID;
 	private String authToken;
 	private String role;
 	private String conference;
@@ -55,6 +54,7 @@ public class JoinedMeeting {
 	private String welcome;
 	private String message;
 	private String server;
+	private String internalUserID;
 
 	// guest is a new feature added on Mconf-Live 0.2
 	private String guest = "";

@@ -58,5 +58,5 @@ public class JoinService0Dot81 extends JoinServiceBase {
 	@Override
 	protected int join(String joinUrl) {
 		return standardJoin(joinUrl);
-	}
+	}	
 }

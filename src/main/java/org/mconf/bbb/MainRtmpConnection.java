@@ -188,7 +188,7 @@ public class MainRtmpConnection extends RtmpConnection {
     	} else
     		return false;
     }
-
+    
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) {
         log.debug("message event: {}", me.toString());
@@ -210,7 +210,7 @@ public class MainRtmpConnection extends RtmpConnection {
         	
 	        case COMMAND_AMF0:
 	        case COMMAND_AMF3:
-	            Command command = (Command) message;
+	            Command command = (Command) message;                
 	            String name = command.getName();
 	            log.debug("server command: {}", name);
 	            switch (name) {
