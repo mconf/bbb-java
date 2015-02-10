@@ -313,14 +313,14 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleChatRequestMessageHistoryReply(Map<String, Object> msg) {
-		System.out.println(msg.toString());
+//		System.out.println(msg.toString());
 	}
 
 	private void handleChatReceivePublicMessageCommand(Map<String, Object> msg) {
-		System.out.println(msg.toString());
+//		System.out.println(msg.toString());
 	}
 
 	private void handleChatReceivePrivateMessageCommand(Map<String, Object> msg) {
-		System.out.println(msg.toString());
+//		System.out.println(msg.toString());
 	}
 }

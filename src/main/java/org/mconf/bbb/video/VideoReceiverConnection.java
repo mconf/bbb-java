@@ -29,6 +29,7 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.mconf.bbb.BigBlueButtonClient;
 import org.mconf.bbb.RtmpConnection;
+import org.mconf.bbb.api.ApplicationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +68,14 @@ public abstract class VideoReceiverConnection extends RtmpConnection {
 	
 	@Override
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-        options.setArgs((Object[]) null);
+		if (version.equals(ApplicationService.VERSION_0_9)) {
+			Object[] params = new Object[2];
+			params[0] = context.getJoinService().getJoinedMeeting().getMeetingID();
+			params[1] = context.getMyUserId();
+			options.setArgs(params);
+		} else {
+			options.setArgs((Object[]) null);
+		}
         writeCommandExpectingResult(e.getChannel(), Command.connect(options));
 	}
 	

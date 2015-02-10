@@ -111,21 +111,8 @@ public class UsersModule extends Module implements ISharedObjectListener {
 				return;
 			}
 			if (method.equals("participantLeft")) {
-				IParticipant p = getParticipant(params.get(0));
-				
-				synchronized (handler.getContext().getParticipantLeftListeners()) {
-					for (OnParticipantLeftListener l : handler.getContext().getParticipantLeftListeners())
-						l.onParticipantLeft(p);
-				}
-
-				if(p.getRole().equals("MODERATOR"))
-					moderatorCount--;
-				else
-					participantCount--;
-
-				log.debug("participantLeft: {}", p);
-				participants.remove(p.getUserId());
-
+				Participant p = getParticipant(params.get(0));
+				onParticipantLeft(p);
 				return;
 			}
 			if (method.equals("participantJoined")) {
@@ -237,6 +224,21 @@ public class UsersModule extends Module implements ISharedObjectListener {
 			l.onParticipantJoined(p);
 	}
 
+	public void onParticipantLeft(Participant p) {
+		synchronized (handler.getContext().getParticipantLeftListeners()) {
+			for (OnParticipantLeftListener l : handler.getContext().getParticipantLeftListeners())
+				l.onParticipantLeft(p);
+		}
+
+		if(p.getRole().equals("MODERATOR"))
+			moderatorCount--;
+		else
+			participantCount--;
+
+		log.debug("participantLeft: {}", p);
+		participants.remove(p.getUserId());
+	}
+
 	private void onParticipantStatusChange(Participant p, String key,
 			Object value) {
 		log.debug("participantStatusChange: " + p.getName() + " status: " + key + " value: " + value.toString());
@@ -283,14 +285,18 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	public void addStream(String streamName) {
 		if (version.equals(ApplicationService.VERSION_0_7)) {
-	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "streamName", streamName);
-	    	handler.writeCommandExpectingResult(channel, cmd);
-	    	
-	    	cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", true);
-	    	handler.writeCommandExpectingResult(channel, cmd);
-		} else { //if (version == JoinService0Dot8.class)
-	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "true,stream=" + streamName);
-	    	handler.writeCommandExpectingResult(channel, cmd);
+			Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "streamName", streamName);
+			handler.writeCommandExpectingResult(channel, cmd);
+			
+			cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", true);
+			handler.writeCommandExpectingResult(channel, cmd);
+		} if (version.equals(ApplicationService.VERSION_0_9)) {
+			Command cmd = new CommandAmf0("participants.shareWebcam", null, streamName);
+			handler.writeCommandExpectingResult(channel, cmd);
+		}
+		else { //if (version == JoinService0Dot8.class)
+			Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "true,stream=" + streamName);
+			handler.writeCommandExpectingResult(channel, cmd);
 		}
 	}
 
@@ -301,9 +307,13 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	
 			cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", false);
 			handler.writeCommandExpectingResult(channel, cmd);
-		} else { //if (version == JoinService0Dot8.class) {
-	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "false,stream=" + streamName);
-	    	handler.writeCommandExpectingResult(channel, cmd);
+		} if (version.equals(ApplicationService.VERSION_0_9)) {
+			Command cmd = new CommandAmf0("participants.unshareWebcam", null);
+			handler.writeCommandExpectingResult(channel, cmd);
+		}
+		else { //if (version == JoinService0Dot8.class) {
+			Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "false,stream=" + streamName);
+			handler.writeCommandExpectingResult(channel, cmd);
 		}
 	}
 
@@ -358,6 +368,22 @@ public class UsersModule extends Module implements ISharedObjectListener {
 				System.out.println("USERS MODULE: " + msgName);
 				handleParticipantLeft(getMessage(command.getArg(1)));
 				return true;
+			case "userSharedWebcam":
+				System.out.println("USERS MODULE: " + msgName);
+				handleUserSharedWebcam(getMessage(command.getArg(1)));
+				return true;
+			case "userUnsharedWebcam":
+				System.out.println("USERS MODULE: " + msgName);
+				handleUserUnsharedWebcam(getMessage(command.getArg(1)));
+				return true;
+			case "joinMeetingReply":
+				System.out.println("USERS MODULE: " + msgName);
+				handleJoinedMeeting(getMessage(command.getArg(1)));
+				return true;
+			case "user_listening_only":
+				System.out.println("USERS MODULE: " + msgName);
+				handleUserListeningOnly(getMessage(command.getArg(1)));
+				return true;
 			case "assignPresenterCallback":
 				System.out.println("USERS MODULE: " + msgName);
 				handleAssignPresenterCallback(getMessage(command.getArg(1)));
@@ -382,14 +408,6 @@ public class UsersModule extends Module implements ISharedObjectListener {
 				System.out.println("USERS MODULE: " + msgName);
 				handleUserLoweredHand(getMessage(command.getArg(1)));
 				return true;
-			case "userSharedWebcam":
-				System.out.println("USERS MODULE: " + msgName);
-				handleUserSharedWebcam(getMessage(command.getArg(1)));
-				return true;
-			case "userUnsharedWebcam":
-				System.out.println("USERS MODULE: " + msgName);
-				handleUserUnsharedWebcam(getMessage(command.getArg(1)));
-				return true;
 			case "getRecordingStatusReply":
 				System.out.println("USERS MODULE: " + msgName);
 				handleGetRecordingStatusReply(getMessage(command.getArg(1)));
@@ -397,14 +415,6 @@ public class UsersModule extends Module implements ISharedObjectListener {
 			case "recordingStatusChanged":
 				System.out.println("USERS MODULE: " + msgName);
 				handleRecordingStatusChanged(getMessage(command.getArg(1)));
-				return true;
-			case "joinMeetingReply":
-				System.out.println("USERS MODULE: " + msgName);
-				handleJoinedMeeting(getMessage(command.getArg(1)));
-				return true;
-			case "user_listening_only":
-				System.out.println("USERS MODULE: " + msgName);
-				handleUserListeningOnly(getMessage(command.getArg(1)));
 				return true;
 			case "permissionsSettingsChanged":
 				System.out.println("USERS MODULE: " + msgName);
@@ -443,8 +453,21 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		onParticipantJoined(p);
 	}
 
-	private void handleParticipantLeft(JSONObject jobj) {
+	private void handleUserSharedWebcam(JSONObject jobj) {
+		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+		String streamName = (String) getFromMessage(jobj, "webcamStream");
+		onParticipantStatusChange(p, "streamName", streamName);
+		onParticipantStatusChange(p, "hasStream", true);
+	}
 
+	private void handleUserUnsharedWebcam(JSONObject jobj) {
+		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+		onParticipantStatusChange(p, "hasStream", false);
+	}
+
+	private void handleParticipantLeft(JSONObject jobj) {
+		Participant p = new Participant((JSONObject) getFromMessage(jobj, "user"), version);
+		onParticipantLeft(p);
 	}
 
 	private void handleAssignPresenterCallback(JSONObject jobj) {
@@ -468,14 +491,6 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleUserLoweredHand(JSONObject jobj) {
-
-	}
-
-	private void handleUserSharedWebcam(JSONObject jobj) {
-
-	}
-
-	private void handleUserUnsharedWebcam(JSONObject jobj) {
 
 	}
 

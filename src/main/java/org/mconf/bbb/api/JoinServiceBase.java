@@ -52,9 +52,6 @@ public abstract class JoinServiceBase {
 	protected BbbServerConfig serverConfig = null;
 	
 	public abstract String getVersion();
-	public abstract Map<String, Object> getLockSettings();
-	public abstract boolean getLockOnStart();
-	public abstract boolean getMuteOnStart();
 	
 	protected abstract String getCreateMeetingUrl(String meetingID);
 	protected abstract String getLoadUrl();
@@ -302,6 +299,18 @@ public abstract class JoinServiceBase {
 			e.printStackTrace();
 		}
 		return "";
+	}
+
+	public Map<String, Object> getLockSettings() {
+		return serverConfig.getLockSettings();
+	}
+
+	public boolean getLockOnStart() {
+		return serverConfig.getLockOnStart();
+	}
+
+	public boolean getMuteOnStart() {
+		return serverConfig.getMuteOnStart();
 	}
 	
 }
