@@ -303,31 +303,24 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 		String msgName = (String) command.getArg(0);
 		switch (msgName) {
 			case "getUsersReply":
-				System.out.println("LISTENERS MODULE: " + msgName);
 				handleGetUsersReply(getMessage(command.getArg(1)));
 				return true;
 			case "userJoinedVoice":
-				System.out.println("LISTENERS MODULE: " + msgName);
 				handleUserJoinedVoice(getMessage(command.getArg(1)));
 				return true;
 			case "userLeftVoice":
-				System.out.println("LISTENERS MODULE: " + msgName);
 				handleUserLeftVoice(getMessage(command.getArg(1)));
 				return true;
 			case "voiceUserMuted":
-				System.out.println("LISTENERS MODULE: " + msgName);
 				handleVoiceUserMuted(getMessage(command.getArg(1)));
 				return true;
 			case "voiceUserTalking":
-				System.out.println("LISTENERS MODULE: " + msgName);
 				handleVoiceUserTalking(getMessage(command.getArg(1)));
 				return true;
 			case "meetingMuted":
-				System.out.println("LISTENERS MODULE: " + msgName);
 				handleMeetingMuted(getMessage(command.getArg(1)));
 				return true;
 			case "meetingState":
-				System.out.println("LISTENERS MODULE: " + msgName);
 				handleMeetingState(getMessage(command.getArg(1)));
 				return true;
 			default:

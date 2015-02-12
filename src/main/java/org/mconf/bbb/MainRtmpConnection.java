@@ -123,7 +123,7 @@ public class MainRtmpConnection extends RtmpConnection {
 		args.add(meeting.getFullname());
 		args.add(meeting.getRole());
 		if (!version.equals(ApplicationService.VERSION_0_81) &&
-			!version.equals(ApplicationService.VERSION_0_9))
+				!version.equals(ApplicationService.VERSION_0_9))
 			args.add(meeting.getConference());
 		if (version.equals(ApplicationService.VERSION_0_7))
 			args.add(meeting.getMode());
@@ -191,9 +191,6 @@ public class MainRtmpConnection extends RtmpConnection {
     
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) {
-        log.debug("message event: {}", me.toString());
-//        System.out.println(me.toString());
-//        System.out.println(ctx.toString());
         final Channel channel = me.getChannel();
         final RtmpMessage message = (RtmpMessage) me.getMessage();
         switch(message.getHeader().getMessageType()) {

@@ -141,7 +141,7 @@ public abstract class VoiceConnection extends RtmpConnection {
         List<Object> args = new ArrayList<Object>();
         args.add("default");
         if (version.equals(ApplicationService.VERSION_0_81) ||
-            version.equals(ApplicationService.VERSION_0_9)) {
+                version.equals(ApplicationService.VERSION_0_9)) {
             args.add(username);
         } else {
             args.add(context.getJoinService().getJoinedMeeting().getFullname());

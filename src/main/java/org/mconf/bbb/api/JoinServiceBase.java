@@ -177,7 +177,6 @@ public abstract class JoinServiceBase {
 	        EntityUtils.consume(httpResponse.getEntity());
 			String enterResponse = getUrl(client, enterUrl).replace("</response>", "<server>" + currentHost.toURI() + "</server></response>");
 			
-			// TODO: check if this will continue this way with 0.81
 			if (getVersion() == ApplicationService.VERSION_0_9) {
 				joinedMeeting.parseJSON(enterResponse);
 			} else {

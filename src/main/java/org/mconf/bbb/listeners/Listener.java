@@ -34,7 +34,7 @@ public class Listener implements IListener {
 		muted = (Boolean) attributes.get("muted");					
 		locked = (Boolean) attributes.get("locked");
 	}
-
+	
 	public Listener(JSONObject jobj) {
 		try {
 			userId = Integer.parseInt(jobj.getString("userId"));

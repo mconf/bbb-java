@@ -61,7 +61,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 
 	public ChatModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
-
+		
 		if (version.equals(ApplicationService.VERSION_0_7))
 			MESSAGE_ENCODING = MESSAGE_ENCODING_STRING;
 		else
@@ -159,7 +159,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	public void doGetChatMessages() {
 		String commandName;
 		if (version.equals(ApplicationService.VERSION_0_81) ||
-			version.equals(ApplicationService.VERSION_0_9)) {
+				version.equals(ApplicationService.VERSION_0_9)) {
 			commandName = "chat.sendPublicChatHistory";
 		} else {
 			commandName = "chat.getChatMessages";
@@ -286,15 +286,12 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		String msgName = (String) command.getArg(0);
 		switch (msgName) {
 			case "ChatRequestMessageHistoryReply":
-				System.out.println("CHAT MODULE: " + msgName);
 				handleChatRequestMessageHistoryReply((Map<String, Object>) command.getArg(1));
 				return true;
 			case "ChatReceivePublicMessageCommand":
-				System.out.println("CHAT MODULE: " + msgName);
 				handleChatReceivePublicMessageCommand((Map<String, Object>) command.getArg(1));
 				return true;
 			case "ChatReceivePrivateMessageCommand":
-				System.out.println("CHAT MODULE: " + msgName);
 				handleChatReceivePrivateMessageCommand((Map<String, Object>) command.getArg(1));
 				return true;
 			default:
@@ -312,14 +309,14 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleChatRequestMessageHistoryReply(Map<String, Object> msg) {
-//		System.out.println(msg.toString());
+
 	}
 
 	private void handleChatReceivePublicMessageCommand(Map<String, Object> msg) {
-//		System.out.println(msg.toString());
+
 	}
 
 	private void handleChatReceivePrivateMessageCommand(Map<String, Object> msg) {
-//		System.out.println(msg.toString());
+
 	}
 }

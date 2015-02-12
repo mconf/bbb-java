@@ -343,8 +343,6 @@ public class BigBlueButtonClient {
 	}
 
 	public boolean onMessageFromServer090(Command command) {
-//		System.out.println(command.toString());
-
 		if (usersModule.onMessageFromServer090(command) ||
 				listenersModule.onMessageFromServer090(command) ||
 				chatModule.onMessageFromServer090(command))

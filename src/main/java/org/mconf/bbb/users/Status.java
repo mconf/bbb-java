@@ -45,8 +45,8 @@ public class Status {
 			raiseHand = jobj.getBoolean("raiseHand");
 			hasStream = jobj.getBoolean("hasStream");
 			presenter = jobj.getBoolean("presenter");
-			// TODO: Check this
 			streamName = jobj.getString("webcamStream");
+			// TODO: fix this to work with mconf 090
 			mood = "";
 //			mood = jobj.getString("mood");
 		} catch (JSONException je) {

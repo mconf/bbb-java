@@ -160,8 +160,8 @@ public class JoinedMeeting {
 			mode = (String) response.get("mode");
 			record = (String) response.get("record");
 			welcome = (String) response.get("welcome");
+			// TODO: server and guest must be fixed to work with mconf 090
 //			guest = (String) response.get("guest");
-			// TODO: This shoud be checked if it's the same as the logoutUrl
 			server = (String) response.get("logoutUrl");
 		} else {
 			message = (String) response.get("message");

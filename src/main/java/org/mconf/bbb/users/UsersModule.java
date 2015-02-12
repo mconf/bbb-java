@@ -62,6 +62,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		
 		if (version.equals(ApplicationService.VERSION_0_9)) {
 			participantsSO = null;
+			startModules();
 			doQueryParticipants();
 			doAuthTokenValidation();
 		} else {
@@ -226,17 +227,17 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	public void onParticipantLeft(Participant p) {
 		synchronized (handler.getContext().getParticipantLeftListeners()) {
-			for (OnParticipantLeftListener l : handler.getContext().getParticipantLeftListeners())
+			for (OnParticipantLeftListener l : handler.getContext().getParticipantLeftListeners()) {
 				l.onParticipantLeft(p);
+			}
+			if(p.getRole().equals("MODERATOR"))
+				moderatorCount--;
+			else
+				participantCount--;
+
+			log.debug("participantLeft: {}", p);
+			participants.remove(p.getUserId());
 		}
-
-		if(p.getRole().equals("MODERATOR"))
-			moderatorCount--;
-		else
-			participantCount--;
-
-		log.debug("participantLeft: {}", p);
-		participants.remove(p.getUserId());
 	}
 
 	private void onParticipantStatusChange(Participant p, String key,
@@ -353,71 +354,55 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		String msgName = (String) command.getArg(0);
 		switch (msgName) {
 			case "validateAuthTokenReply":
-				System.out.println("USERS MODULE: " + msgName);
 				handleValidateAuthTokenReply(getMessage(command.getArg(1)));
 				return true;
 			case "getUsersReply":
-				System.out.println("USERS MODULE: " + msgName);
 				handleGetUsersReply(getMessage(command.getArg(1)));
-				return false; // Listeners will need to get this message too
+				// we return false so listeners can work this message too
+				return false;
 			case "participantJoined":
-				System.out.println("USERS MODULE: " + msgName);
 				handleParticipantJoined(getMessage(command.getArg(1)));
 				return true;
 			case "participantLeft":
-				System.out.println("USERS MODULE: " + msgName);
 				handleParticipantLeft(getMessage(command.getArg(1)));
 				return true;
 			case "userSharedWebcam":
-				System.out.println("USERS MODULE: " + msgName);
 				handleUserSharedWebcam(getMessage(command.getArg(1)));
 				return true;
 			case "userUnsharedWebcam":
-				System.out.println("USERS MODULE: " + msgName);
 				handleUserUnsharedWebcam(getMessage(command.getArg(1)));
 				return true;
 			case "joinMeetingReply":
-				System.out.println("USERS MODULE: " + msgName);
 				handleJoinedMeeting(getMessage(command.getArg(1)));
 				return true;
 			case "user_listening_only":
-				System.out.println("USERS MODULE: " + msgName);
 				handleUserListeningOnly(getMessage(command.getArg(1)));
 				return true;
 			case "assignPresenterCallback":
-				System.out.println("USERS MODULE: " + msgName);
 				handleAssignPresenterCallback(getMessage(command.getArg(1)));
 				return true;
 			case "meetingEnded":
-				System.out.println("USERS MODULE: " + msgName);
 				handleLogout(getMessage(command.getArg(1)));
 				return true;
 			case "meetingHasEnded":
-				System.out.println("USERS MODULE: " + msgName);
 				handleMeetingHasEnded(getMessage(command.getArg(1)));
 				return true;
 			case "participantStatusChange":
-				System.out.println("USERS MODULE: " + msgName);
 				handleParticipantStatusChange(getMessage(command.getArg(1)));
 				return true;
 			case "userRaisedHand":
-				System.out.println("USERS MODULE: " + msgName);
 				handleUserRaisedHand(getMessage(command.getArg(1)));
 				return true;
 			case "userLoweredHand":
-				System.out.println("USERS MODULE: " + msgName);
 				handleUserLoweredHand(getMessage(command.getArg(1)));
 				return true;
 			case "getRecordingStatusReply":
-				System.out.println("USERS MODULE: " + msgName);
 				handleGetRecordingStatusReply(getMessage(command.getArg(1)));
 				return true;
 			case "recordingStatusChanged":
-				System.out.println("USERS MODULE: " + msgName);
 				handleRecordingStatusChanged(getMessage(command.getArg(1)));
 				return true;
 			case "permissionsSettingsChanged":
-				System.out.println("USERS MODULE: " + msgName);
 				handlePermissionsSettingsChanged(getMessage(command.getArg(1)));
 				return true;
 			default:
@@ -433,9 +418,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleGetUsersReply(JSONObject jobj) {
-		startModules();
 		participants.clear();
-
 		JSONArray users = (JSONArray) getFromMessage(jobj, "users");
 
 		for (int i = 0; i < users.length(); i++) {
