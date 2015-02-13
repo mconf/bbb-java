@@ -62,18 +62,26 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	public ChatModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
 		
-		if (handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_7))
+		if (version.equals(ApplicationService.VERSION_0_7))
 			MESSAGE_ENCODING = MESSAGE_ENCODING_STRING;
 		else
 			MESSAGE_ENCODING = MESSAGE_ENCODING_TYPED_OBJECT;
 		
-		publicChatSO = handler.getSharedObject("chatSO", false);
-		publicChatSO.addSharedObjectListener(this);
-		publicChatSO.connect(channel);
-		
-		privateChatSO = handler.getSharedObject(handler.getContext().getMyUserId(), false);
-		privateChatSO.addSharedObjectListener(this);
-		privateChatSO.connect(channel);
+		if (version.equals(ApplicationService.VERSION_0_9)) {
+			publicChatSO = null;
+			privateChatSO = null;
+			publicChatMessages.clear();
+			privateChatMessages.clear();
+			doGetChatMessages();
+		} else {
+			publicChatSO = handler.getSharedObject("chatSO", false);
+			publicChatSO.addSharedObjectListener(this);
+			publicChatSO.connect(channel);
+			
+			privateChatSO = handler.getSharedObject(handler.getContext().getMyUserId(), false);
+			privateChatSO.addSharedObjectListener(this);
+			privateChatSO.connect(channel);
+		}
 	}
 
 	@Override
@@ -150,7 +158,8 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	 */
 	public void doGetChatMessages() {
 		String commandName;
-		if (handler.getContext().getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81)) {
+		if (version.equals(ApplicationService.VERSION_0_81) ||
+				version.equals(ApplicationService.VERSION_0_9)) {
 			commandName = "chat.sendPublicChatHistory";
 		} else {
 			commandName = "chat.getChatMessages";
@@ -256,6 +265,15 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	}
 
 	public boolean onMessageFromServer(Command command) {
+		switch (version) {
+			case ApplicationService.VERSION_0_9:
+				return handle0Dot9MessageFromServer(command);
+			default:
+				return handleMessageFromServer(command);
+		}
+	}
+
+	private boolean handleMessageFromServer(Command command) {
 		String type = (String) command.getArg(0);
 		if (type.equals("ChatReceivePublicMessageCommand") || type.equals("ChatReceivePrivateMessageCommand")) {
 			onMessageReceived(command.getArg(1));
@@ -273,6 +291,23 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		}
 	}
 
+	public boolean handle0Dot9MessageFromServer(Command command) {
+		String msgName = (String) command.getArg(0);
+		switch (msgName) {
+			case "ChatRequestMessageHistoryReply":
+				handleChatRequestMessageHistoryReply((Map<String, Object>) command.getArg(1));
+				return true;
+			case "ChatReceivePublicMessageCommand":
+				handleChatReceivePublicMessageCommand((Map<String, Object>) command.getArg(1));
+				return true;
+			case "ChatReceivePrivateMessageCommand":
+				handleChatReceivePrivateMessageCommand((Map<String, Object>) command.getArg(1));
+				return true;
+			default:
+				return false;
+		}
+	}
+
 	@Override
 	public boolean onCommand(String resultFor, Command command) {
 		if (onGetChatMessages(resultFor, command)) {
@@ -282,4 +317,15 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		}
 	}
 
+	private void handleChatRequestMessageHistoryReply(Map<String, Object> msg) {
+
+	}
+
+	private void handleChatReceivePublicMessageCommand(Map<String, Object> msg) {
+
+	}
+
+	private void handleChatReceivePrivateMessageCommand(Map<String, Object> msg) {
+
+	}
 }

@@ -21,12 +21,14 @@ import com.flazr.rtmp.client.ClientOptions;
 public abstract class RtmpConnection extends ClientHandler implements ChannelFutureListener {
 
 	private static final Logger log = LoggerFactory.getLogger(RtmpConnection.class);
+	protected final String version;
 
 	final protected BigBlueButtonClient context;
 	
 	public RtmpConnection(ClientOptions options, BigBlueButtonClient context) {
 		super(options);
 		this.context = context;
+		version = context.getJoinService().getApplicationService().getVersion();
 	}
 	
 	private ClientBootstrap bootstrap = null;

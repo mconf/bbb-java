@@ -24,8 +24,11 @@ package org.mconf.bbb.video;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
 import org.mconf.bbb.BigBlueButtonClient;
 import org.mconf.bbb.RtmpConnection;
+import org.mconf.bbb.api.ApplicationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +36,7 @@ import com.flazr.rtmp.RtmpDecoder;
 import com.flazr.rtmp.RtmpEncoder;
 import com.flazr.rtmp.client.ClientHandshakeHandler;
 import com.flazr.rtmp.client.ClientOptions;
+import com.flazr.rtmp.message.Command;
 
 public class VideoPublisherConnection extends RtmpConnection {
 
@@ -56,5 +60,18 @@ public class VideoPublisherConnection extends RtmpConnection {
 		        return pipeline;
 			}
 		};
+	}
+
+	@Override
+	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+		if (version.equals(ApplicationService.VERSION_0_9)) {
+			Object[] params = new Object[2];
+			params[0] = context.getJoinService().getJoinedMeeting().getMeetingID();
+			params[1] = context.getMyUserId();
+			options.setArgs(params);
+		} else {
+			options.setArgs((Object[]) null);
+		}
+		writeCommandExpectingResult(e.getChannel(), Command.connect(options));
 	}
 }

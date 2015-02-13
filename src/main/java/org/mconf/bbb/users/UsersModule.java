@@ -24,7 +24,12 @@ package org.mconf.bbb.users;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import org.jboss.netty.channel.Channel;
 import org.mconf.bbb.BigBlueButtonClient.OnKickUserListener;
@@ -51,16 +56,20 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	private Map<String, Participant> participants = new ConcurrentHashMap<String, Participant>();
 	private int moderatorCount = 0, participantCount = 0;
-	private String joinServiceVersion;
 
 	public UsersModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
 		
-		joinServiceVersion = handler.getContext().getJoinService().getApplicationService().getVersion();
-		
-		participantsSO = handler.getSharedObject("participantsSO", false);
-		participantsSO.addSharedObjectListener(this);
-		participantsSO.connect(channel);
+		if (version.equals(ApplicationService.VERSION_0_9)) {
+			participantsSO = null;
+			startModules();
+			doQueryParticipants();
+			doAuthTokenValidation();
+		} else {
+			participantsSO = handler.getSharedObject("participantsSO", false);
+			participantsSO.addSharedObjectListener(this);
+			participantsSO.connect(channel);
+		}
 	}
 
 	@Override
@@ -103,25 +112,12 @@ public class UsersModule extends Module implements ISharedObjectListener {
 				return;
 			}
 			if (method.equals("participantLeft")) {
-				IParticipant p = getParticipant(params.get(0));
-				
-				synchronized (handler.getContext().getParticipantLeftListeners()) {
-					for (OnParticipantLeftListener l : handler.getContext().getParticipantLeftListeners())
-						l.onParticipantLeft(p);
-				}
-
-				if(p.getRole().equals("MODERATOR"))
-					moderatorCount--;
-				else
-					participantCount--;
-
-				log.debug("participantLeft: {}", p);
-				participants.remove(p.getUserId());
-
+				Participant p = getParticipant(params.get(0));
+				onParticipantLeft(p);
 				return;
 			}
 			if (method.equals("participantJoined")) {
-				Participant p = new Participant((Map<String, Object>) params.get(0), joinServiceVersion);
+				Participant p = new Participant((Map<String, Object>) params.get(0), version);
 				onParticipantJoined(p);
 				return;
 			}
@@ -170,6 +166,14 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		log.debug("onSharedObjectUpdate 3");
 	}
 
+	private void doAuthTokenValidation() {
+		Map<String, String> message = new HashMap<String, String>();
+		message.put("userId", handler.getContext().getJoinService().getJoinedMeeting().getInternalUserID());
+		message.put("authToken", handler.getContext().getJoinService().getJoinedMeeting().getAuthToken());
+		Command cmd = new CommandAmf0("validateToken", null, message);
+		handler.writeCommandExpectingResult(channel, cmd);
+	}
+
 	/**
 	 * {@link} https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/modules/chat/services/PrivateChatSharedObjectService.as#L142
 	 */
@@ -188,16 +192,18 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		if (resultFor.equals("participants.getParticipants")) {
 			Map<String, Object> args = (Map<String, Object>) command.getArg(0);
 
-			participants.clear();
+			if (args != null) {
+				participants.clear();
 
-			@SuppressWarnings("unused")
-			int count = ((Double) args.get("count")).intValue();
+				@SuppressWarnings("unused")
+				int count = ((Double) args.get("count")).intValue();
 
-			Map<String, Object> participantsMap = (Map<String, Object>) args.get("participants");
+				Map<String, Object> participantsMap = (Map<String, Object>) args.get("participants");
 
-			for (Map.Entry<String, Object> entry : participantsMap.entrySet()) {
-				Participant p = new Participant((Map<String, Object>) entry.getValue(), joinServiceVersion);
-				onParticipantJoined(p);
+				for (Map.Entry<String, Object> entry : participantsMap.entrySet()) {
+					Participant p = new Participant((Map<String, Object>) entry.getValue(), version);
+					onParticipantJoined(p);
+				}
 			}
 			return true;
 		}
@@ -217,6 +223,21 @@ public class UsersModule extends Module implements ISharedObjectListener {
 			participantCount++;
 		for (OnParticipantJoinedListener l : handler.getContext().getParticipantJoinedListeners())
 			l.onParticipantJoined(p);
+	}
+
+	public void onParticipantLeft(Participant p) {
+		synchronized (handler.getContext().getParticipantLeftListeners()) {
+			for (OnParticipantLeftListener l : handler.getContext().getParticipantLeftListeners()) {
+				l.onParticipantLeft(p);
+			}
+			if(p.getRole().equals("MODERATOR"))
+				moderatorCount--;
+			else
+				participantCount--;
+
+			log.debug("participantLeft: {}", p);
+			participants.remove(p.getUserId());
+		}
 	}
 
 	private void onParticipantStatusChange(Participant p, String key,
@@ -252,40 +273,48 @@ public class UsersModule extends Module implements ISharedObjectListener {
 			return;
 		}
 		
-		if (joinServiceVersion.equals(ApplicationService.VERSION_0_7)) {
+		if (version.equals(ApplicationService.VERSION_0_7)) {
 			Command cmd = new CommandAmf0("presentation.assignPresenter", null, userId, p.getName(), 1);
 			handler.writeCommandExpectingResult(channel, cmd);
 		}
 		
-		else { //if (joinServiceVersion == JoinService0Dot8.class)
+		else { //if (version == JoinService0Dot8.class)
 			Command cmd = new CommandAmf0("participants.assignPresenter", null, userId, p.getName(), 1);
 			handler.writeCommandExpectingResult(channel, cmd);
 		}
 	}
 
 	public void addStream(String streamName) {
-		if (joinServiceVersion.equals(ApplicationService.VERSION_0_7)) {
-	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "streamName", streamName);
-	    	handler.writeCommandExpectingResult(channel, cmd);
-	    	
-	    	cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", true);
-	    	handler.writeCommandExpectingResult(channel, cmd);
-		} else { //if (joinServiceVersion == JoinService0Dot8.class) 
-	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "true,stream=" + streamName);
-	    	handler.writeCommandExpectingResult(channel, cmd);
+		if (version.equals(ApplicationService.VERSION_0_7)) {
+			Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "streamName", streamName);
+			handler.writeCommandExpectingResult(channel, cmd);
+			
+			cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", true);
+			handler.writeCommandExpectingResult(channel, cmd);
+		} if (version.equals(ApplicationService.VERSION_0_9)) {
+			Command cmd = new CommandAmf0("participants.shareWebcam", null, streamName);
+			handler.writeCommandExpectingResult(channel, cmd);
+		}
+		else { //if (version == JoinService0Dot8.class)
+			Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "true,stream=" + streamName);
+			handler.writeCommandExpectingResult(channel, cmd);
 		}
 	}
 
 	public void removeStream(String streamName) {
-		if (joinServiceVersion.equals(ApplicationService.VERSION_0_7)) {
+		if (version.equals(ApplicationService.VERSION_0_7)) {
 			Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "");
 			handler.writeCommandExpectingResult(channel, cmd);
 	
 			cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", false);
 			handler.writeCommandExpectingResult(channel, cmd);
-		} else { //if (joinServiceVersion == JoinService0Dot8.class) {
-	    	Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "false,stream=" + streamName);
-	    	handler.writeCommandExpectingResult(channel, cmd);
+		} if (version.equals(ApplicationService.VERSION_0_9)) {
+			Command cmd = new CommandAmf0("participants.unshareWebcam", null);
+			handler.writeCommandExpectingResult(channel, cmd);
+		}
+		else { //if (version == JoinService0Dot8.class) {
+			Command cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", "false,stream=" + streamName);
+			handler.writeCommandExpectingResult(channel, cmd);
 		}
 	}
 
@@ -300,8 +329,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	@Override
 	public boolean onCommand(String resultFor, Command command) {
 		if (onQueryParticipants(resultFor, command)) {
-			handler.getContext().createChatModule(handler, channel);
-			handler.getContext().createListenersModule(handler, channel);
+			startModules();
 			return true;
 		} else
 			return false;
@@ -315,4 +343,163 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		return participantCount;
 	}
 
+	private void startModules() {
+		if (!handler.getContext().areModulesCreated()) {
+			handler.getContext().createChatModule(handler, channel);
+			handler.getContext().createListenersModule(handler, channel);
+		}
+	}
+
+	public boolean onMessageFromServer(Command command) {
+		String msgName = (String) command.getArg(0);
+		switch (msgName) {
+			case "validateAuthTokenReply":
+				handleValidateAuthTokenReply(getMessage(command.getArg(1)));
+				return true;
+			case "getUsersReply":
+				handleGetUsersReply(getMessage(command.getArg(1)));
+				// We return false so listeners can handle this message too
+				return false;
+			case "participantJoined":
+				handleParticipantJoined(getMessage(command.getArg(1)));
+				return true;
+			case "participantLeft":
+				handleParticipantLeft(getMessage(command.getArg(1)));
+				return true;
+			case "userSharedWebcam":
+				handleUserSharedWebcam(getMessage(command.getArg(1)));
+				return true;
+			case "userUnsharedWebcam":
+				handleUserUnsharedWebcam(getMessage(command.getArg(1)));
+				return true;
+			case "joinMeetingReply":
+				handleJoinedMeeting(getMessage(command.getArg(1)));
+				return true;
+			case "user_listening_only":
+				handleUserListeningOnly(getMessage(command.getArg(1)));
+				return true;
+			case "assignPresenterCallback":
+				handleAssignPresenterCallback(getMessage(command.getArg(1)));
+				return true;
+			case "meetingEnded":
+				handleLogout(getMessage(command.getArg(1)));
+				return true;
+			case "meetingHasEnded":
+				handleMeetingHasEnded(getMessage(command.getArg(1)));
+				return true;
+			case "participantStatusChange":
+				handleParticipantStatusChange(getMessage(command.getArg(1)));
+				return true;
+			case "userRaisedHand":
+				handleUserRaisedHand(getMessage(command.getArg(1)));
+				return true;
+			case "userLoweredHand":
+				handleUserLoweredHand(getMessage(command.getArg(1)));
+				return true;
+			case "getRecordingStatusReply":
+				handleGetRecordingStatusReply(getMessage(command.getArg(1)));
+				return true;
+			case "recordingStatusChanged":
+				handleRecordingStatusChanged(getMessage(command.getArg(1)));
+				return true;
+			case "permissionsSettingsChanged":
+				handlePermissionsSettingsChanged(getMessage(command.getArg(1)));
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	private void handleValidateAuthTokenReply(JSONObject jobj) {
+		boolean valid = (boolean) getFromMessage(jobj, "valid");
+		if (!valid) {
+			log.error("Invalid AuthToken");
+		}
+	}
+
+	private void handleGetUsersReply(JSONObject jobj) {
+		participants.clear();
+		JSONArray users = (JSONArray) getFromMessage(jobj, "users");
+
+		for (int i = 0; i < users.length(); i++) {
+			try {
+				Participant p = new Participant(users.getJSONObject(i), version);
+				onParticipantJoined(p);
+			} catch (JSONException je) {
+				System.out.println(je.toString());
+			}
+		}
+	}
+
+	private void handleParticipantJoined(JSONObject jobj) {
+		Participant p = new Participant((JSONObject) getFromMessage(jobj, "user"), version);
+		onParticipantJoined(p);
+	}
+
+	private void handleUserSharedWebcam(JSONObject jobj) {
+		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+		String streamName = (String) getFromMessage(jobj, "webcamStream");
+		onParticipantStatusChange(p, "streamName", streamName);
+		onParticipantStatusChange(p, "hasStream", true);
+	}
+
+	private void handleUserUnsharedWebcam(JSONObject jobj) {
+		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+		onParticipantStatusChange(p, "hasStream", false);
+	}
+
+	private void handleParticipantLeft(JSONObject jobj) {
+		Participant p = new Participant((JSONObject) getFromMessage(jobj, "user"), version);
+		onParticipantLeft(p);
+	}
+
+	private void handleUserRaisedHand(JSONObject jobj) {
+		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+		onParticipantStatusChange(p, "raiseHand", true);
+	}
+
+	private void handleUserLoweredHand(JSONObject jobj) {
+		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+		onParticipantStatusChange(p, "raiseHand", false);
+	}
+
+	private void handleParticipantStatusChange(JSONObject jobj) {
+//		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+//		String k = (String) getFromMessage(jobj, "status");
+//		Boolean v = (Boolean) getFromMessage(jobj, "value");
+//		onParticipantStatusChange(p, k, v);
+	}
+
+	private void handleAssignPresenterCallback(JSONObject jobj) {
+//		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+//		onParticipantStatusChange(p, "presenter", true);
+	}
+
+	private void handleJoinedMeeting(JSONObject jobj) {
+		// participantJoined seems to send the same message, so I think we don't need to handle this one
+	}
+
+	private void handleLogout(JSONObject jobj) {
+
+	}
+
+	private void handleMeetingHasEnded(JSONObject jobj) {
+
+	}
+
+	private void handleGetRecordingStatusReply(JSONObject jobj) {
+
+	}
+
+	private void handleRecordingStatusChanged(JSONObject jobj) {
+
+	}
+
+	private void handleUserListeningOnly(JSONObject jobj) {
+
+	}
+
+	private void handlePermissionsSettingsChanged(JSONObject jobj) {
+
+	}
 }

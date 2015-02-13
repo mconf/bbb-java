@@ -3,6 +3,7 @@ package org.mconf.bbb.api;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,7 +49,7 @@ public abstract class JoinServiceBase {
 	protected Meetings meetings = new Meetings();
 	protected boolean loaded = false;
 	protected ApplicationService appService = null;
-	private BbbServerConfig serverConfig = null;
+	protected BbbServerConfig serverConfig = null;
 	
 	public abstract String getVersion();
 	protected abstract String getCreateMeetingUrl(String meetingID);
@@ -74,13 +75,14 @@ public abstract class JoinServiceBase {
 			e.printStackTrace();
 			log.error("Can't get the url {}", createUrl);
 		}
-		
-		if (meetingID.equals(response))
-			return E_OK;
-		else {
-			log.error("create response: {}", response);
-			return E_SERVER_UNREACHABLE;
+		if (getVersion() == ApplicationService.VERSION_0_9) {
+			if (ParserUtils.getNodeValueFromResponse(response, "returncode").equals("SUCCESS"))
+				return E_OK;
+		} else {
+			if (meetingID.equals(response)) return E_OK;
 		}
+		log.error("create response: {}", response);
+		return E_SERVER_UNREACHABLE;
 	}
 
 	public int load() { //.
@@ -125,7 +127,7 @@ public abstract class JoinServiceBase {
 		try {
 			String joinResponse = getUrl(joinUrl);
 			log.debug("join response: {}", joinResponse);
-			joinedMeeting.parse(joinResponse);
+			joinedMeeting.parseXML(joinResponse);
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Can't join the url {}", joinUrl);
@@ -174,7 +176,12 @@ public abstract class JoinServiceBase {
 	        // message is answered by another host (proxy)
 	        EntityUtils.consume(httpResponse.getEntity());
 			String enterResponse = getUrl(client, enterUrl).replace("</response>", "<server>" + currentHost.toURI() + "</server></response>");
-			joinedMeeting.parse(enterResponse);
+			
+			if (getVersion() == ApplicationService.VERSION_0_9) {
+				joinedMeeting.parseJSON(enterResponse);
+			} else {
+				joinedMeeting.parseXML(enterResponse);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.error("Can't join the url {}", joinUrl);
@@ -290,6 +297,18 @@ public abstract class JoinServiceBase {
 			e.printStackTrace();
 		}
 		return "";
+	}
+
+	public Map<String, Object> getLockSettings() {
+		return serverConfig.getLockSettings();
+	}
+
+	public boolean getLockOnStart() {
+		return serverConfig.getLockOnStart();
+	}
+
+	public boolean getMuteOnStart() {
+		return serverConfig.getMuteOnStart();
 	}
 	
 }

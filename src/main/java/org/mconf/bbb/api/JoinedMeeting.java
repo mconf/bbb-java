@@ -29,6 +29,10 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.json.JSONTokener;
+import org.json.JSONObject;
+import org.json.JSONException;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -39,6 +43,7 @@ public class JoinedMeeting {
 	private String confname;
 	private String meetingID;
 	private String externUserID;
+	private String authToken;
 	private String role;
 	private String conference;
 	private String room;
@@ -50,8 +55,9 @@ public class JoinedMeeting {
 	private String message;
 	private String server;
 	private String internalUserID;
+
 	// guest is a new feature added on Mconf-Live 0.2
-	private String guest;
+	private String guest = "";
 
 	public JoinedMeeting() {
 		
@@ -75,7 +81,7 @@ public class JoinedMeeting {
 	 * 	<welcome>&lt;br&gt;Welcome to this BigBlueButton Demo Server.&lt;br&gt;&lt;br&gt;For help using BigBlueButton &lt;a href="event:http://www.bigbluebutton.org/content/videos"&gt;&lt;u&gt;check out these videos&lt;/u&gt;&lt;/a&gt;.&lt;br&gt;&lt;br&gt;</welcome>
 	 * </response>
 	 */
-	public void parse(String str) throws UnsupportedEncodingException, SAXException, IOException, ParserConfigurationException {	
+	public void parseXML(String str) throws UnsupportedEncodingException, SAXException, IOException, ParserConfigurationException {	
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		DocumentBuilder db = dbf.newDocumentBuilder();
 		Document doc = db.parse(new ByteArrayInputStream(str.getBytes("UTF-8")));
@@ -102,6 +108,63 @@ public class JoinedMeeting {
 			guest = ParserUtils.getNodeValue(nodeResponse, "guest");
 		} else {
 			message = ParserUtils.getNodeValue(nodeResponse, "message");
+		}
+	}
+
+	/*
+	{
+	"response":
+	 {
+	 "returncode":"SUCCESS",
+	 "fullname":"Bot 1",
+	 "confname":"",
+	 "meetingID":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1423161802071",
+	 "externMeetingID":"Test meeting 001",
+	 "externUserID":"pzsgyuedcjq0",
+	 "internalUserID":"pzsgyuedcjq0_1",
+	 "authToken":"xgdlk7skxxfx",
+	 "role":"VIEWER",
+	 "conference":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1423161802071",
+	 "room":"bfb21c3c6a58bc183f60405aee1010b78e8b0ba6-1423161802071",
+	 "voicebridge":"53822",
+	 "dialnumber":"613-555-1234",
+	 "webvoiceconf":"53822",
+	 "mode":"LIVE",
+	 "record":"false",
+	 "allowStartStopRecording":true,
+	 "welcome":"<br>Welcome to <b><\u002fb>!<br><br>For help on using BigBlueButton see these (short) <a href=\"event:http://www.bigbluebutton.org/content/videos\"><u>tutorial videos<\u002fu><\u002fa>.<br><br>To join the audio bridge click the headset icon (upper-left hand corner).  Use a headset to avoid causing background noise for others.<br><br><br>This server is running a build of <a href=\"https://code.google.com/p/bigbluebutton/wiki/090Overview\" target=\"_blank\"><u>BigBlueButton 0.9.0-beta<\u002fu><\u002fa>.",
+	 "logoutUrl":"http://10.0.3.100",
+	 "defaultLayout":"NOLAYOUT",
+	 "avatarURL":"http://10.0.3.100/client/avatar.png",
+	 "customdata":[]
+	 }
+	}
+	*/
+	public void parseJSON(String str) throws JSONException {
+		JSONObject obj = new JSONObject(new JSONTokener(str));
+		JSONObject response = (JSONObject) obj.get("response");
+		returncode = (String) response.get("returncode");
+
+		if (returncode.equals("SUCCESS")) {
+			fullname = (String) response.get("fullname");
+			confname = (String) response.get("confname");
+			meetingID = (String) response.get("meetingID");
+			externUserID = (String) response.get("externUserID");
+			internalUserID = (String) response.get("internalUserID");
+			authToken = (String) response.get("authToken");
+			role = (String) response.get("role");
+			conference = (String) response.get("conference");
+			room = (String) response.get("room");
+			voicebridge = (String) response.get("voicebridge");
+			webvoiceconf = (String) response.get("webvoiceconf");
+			mode = (String) response.get("mode");
+			record = (String) response.get("record");
+			welcome = (String) response.get("welcome");
+			// TODO: server and guest must be fixed to work with mconf 090
+//			guest = (String) response.get("guest");
+			server = (String) response.get("logoutUrl");
+		} else {
+			message = (String) response.get("message");
 		}
 	}
 
@@ -217,5 +280,13 @@ public class JoinedMeeting {
 
 	public void setInternalUserID(String internalUserID) {
 		this.internalUserID = internalUserID;
+	}
+
+	public String getAuthToken() {
+		return authToken;
+	}
+
+	public void setAuthToken(String authToken) {
+		this.authToken = authToken;
 	}
 }

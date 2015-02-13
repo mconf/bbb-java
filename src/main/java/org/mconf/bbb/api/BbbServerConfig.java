@@ -1,6 +1,7 @@
 package org.mconf.bbb.api;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,4 +45,32 @@ public class BbbServerConfig {
 			return true;
 	}		
 
+	public Map<String, Object> getLockSettings()
+	{
+		Map<String, Object> lockSettings = new HashMap<String, Object>();
+
+		lockSettings.put("disableCam", Boolean.valueOf(parser.getNodeAttribute("lock", "disableCamForLockedUsers")));
+		lockSettings.put("disableMic", Boolean.valueOf(parser.getNodeAttribute("lock", "disableMicForLockedUsers")));
+		lockSettings.put("disablePrivateChat", Boolean.valueOf(parser.getNodeAttribute("lock", "disablePrivateChatForLockedUsers")));
+		lockSettings.put("disablePublicChat", Boolean.valueOf(parser.getNodeAttribute("lock", "disablePublicChatForLockedUsers")));
+		lockSettings.put("lockedLayout", Boolean.valueOf(parser.getNodeAttribute("lock", "lockLayoutForLockedUsers")));
+
+		return lockSettings;
+	}
+
+	public boolean getLockOnStart()
+	{
+		String lockOnStart = parser.getNodeAttribute("meeting", "lockOnStart");
+		if (lockOnStart != null) {
+			return Boolean.parseBoolean(lockOnStart);
+		} else return false;
+	}
+
+	public boolean getMuteOnStart()
+	{
+		String muteOnStart = parser.getNodeAttribute("meeting", "muteOnStart");
+		if (muteOnStart != null) {
+			return Boolean.parseBoolean(muteOnStart);
+		} else return false;
+	}
 }

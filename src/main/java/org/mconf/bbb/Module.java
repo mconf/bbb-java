@@ -25,14 +25,43 @@ import org.jboss.netty.channel.Channel;
 
 import com.flazr.rtmp.message.Command;
 
+import java.util.Map;
+import java.util.HashMap;
+
+import org.json.JSONObject;
+import org.json.JSONException;
+
 public abstract class Module {
 	protected final MainRtmpConnection handler;
 	protected final Channel channel;
+	protected final String version;
 	
 	public Module(final MainRtmpConnection handler, final Channel channel) {
 		this.handler = handler;
 		this.channel = channel;
+		version = handler.getContext().getJoinService().getApplicationService().getVersion();
 	}
 	
 	abstract public boolean onCommand(String resultFor, Command command);
+
+	protected JSONObject getMessage(Object msg) {
+		JSONObject jobj = null;
+		try {
+			Map<String, Object> map = (HashMap<String, Object>) msg;
+			jobj = new JSONObject((String) map.get("msg"));
+		} catch (JSONException je) {
+			System.out.println(je.toString());
+		}
+		return jobj;
+	}
+
+	protected Object getFromMessage(JSONObject msg, String attribute) {
+		Object obj = null;
+		try {
+			obj = (Object) msg.get(attribute);
+		} catch (JSONException je) {
+			System.out.println(je.toString());
+		}
+		return obj;
+	}
 }

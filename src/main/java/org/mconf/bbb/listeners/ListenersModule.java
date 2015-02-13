@@ -25,12 +25,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import org.jboss.netty.channel.Channel;
 import org.mconf.bbb.MainRtmpConnection;
 import org.mconf.bbb.Module;
 import org.mconf.bbb.BigBlueButtonClient.OnListenerJoinedListener;
 import org.mconf.bbb.BigBlueButtonClient.OnListenerLeftListener;
 import org.mconf.bbb.BigBlueButtonClient.OnListenerStatusChangeListener;
+import org.mconf.bbb.api.ApplicationService;
 import org.red5.server.api.IAttributeStore;
 import org.red5.server.api.so.IClientSharedObject;
 import org.red5.server.api.so.ISharedObjectBase;
@@ -52,9 +57,13 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 	public ListenersModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
 		
-		voiceSO = handler.getSharedObject("meetMeUsersSO", false);
-		voiceSO.addSharedObjectListener(this);
-		voiceSO.connect(channel);
+		if (version.equals(ApplicationService.VERSION_0_9)) {
+			voiceSO = null;
+		} else {
+			voiceSO = handler.getSharedObject("meetMeUsersSO", false);
+			voiceSO.addSharedObjectListener(this);
+			voiceSO.connect(channel);
+		}
 	}
 	
 	@Override
@@ -279,5 +288,118 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 		for (OnListenerJoinedListener l : handler.getContext().getListenerJoinedListeners())
 			l.onListenerJoined(p);
 	}
-	
+
+	private Listener getJoinedVoiceUser(JSONObject jobj) {
+		Listener l = null;
+		JSONObject voiceUser = (JSONObject) getFromMessage(jobj, "voiceUser");
+		boolean joined = (boolean) getFromMessage(voiceUser, "joined");
+
+		if (joined) l = new Listener(voiceUser);
+
+		return l;
+	}
+
+	public boolean onMessageFromServer(Command command) {
+		String msgName = (String) command.getArg(0);
+		switch (msgName) {
+			case "getUsersReply":
+				handleGetUsersReply(getMessage(command.getArg(1)));
+				return true;
+			case "userJoinedVoice":
+				handleUserJoinedVoice(getMessage(command.getArg(1)));
+				return true;
+			case "userLeftVoice":
+				handleUserLeftVoice(getMessage(command.getArg(1)));
+				return true;
+			case "voiceUserMuted":
+				handleVoiceUserMuted(getMessage(command.getArg(1)));
+				return true;
+			case "voiceUserTalking":
+				handleVoiceUserTalking(getMessage(command.getArg(1)));
+				return true;
+			case "meetingMuted":
+				handleMeetingMuted(getMessage(command.getArg(1)));
+				return true;
+			case "meetingState":
+				handleMeetingState(getMessage(command.getArg(1)));
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	private void handleGetUsersReply(JSONObject jobj) {
+		JSONArray users = (JSONArray) getFromMessage(jobj, "users");
+
+		listeners.clear();
+		for (int i = 0; i < users.length(); i++) {
+			try {
+				Listener l = getJoinedVoiceUser(users.getJSONObject(i));
+				if (l != null) onListenerJoined(l);
+			} catch (JSONException je) {
+				System.out.println(je.toString());
+			}
+		}
+	}
+
+	private void handleMeetingState(JSONObject jobj) {
+		roomMuted = (boolean) getFromMessage(jobj, "meetingMuted");
+	}
+
+	private void handleUserJoinedVoice(JSONObject jobj) {
+		JSONObject user = (JSONObject) getFromMessage(jobj, "user");
+		Listener l = new Listener((JSONObject) getFromMessage(user, "voiceUser"));
+		onListenerJoined(l);
+	}
+
+	private Integer getUserId(String participantId) {
+		for (Map.Entry<Integer, Listener> entry : listeners.entrySet()) {
+			Listener l = entry.getValue();
+			if (participantId.equals(l.getParticipantId())) return entry.getKey();
+		}
+		return -1;
+	}
+
+	private void handleUserLeftVoice(JSONObject jobj) {
+		JSONObject user = (JSONObject) getFromMessage(jobj, "user");
+		String participantId = (String) getFromMessage(user, "userId");
+		Integer userId = getUserId(participantId);
+		Listener listener = listeners.get(userId);
+
+		if (listener != null) {
+			for (OnListenerLeftListener l : handler.getContext().getListenerLeftListeners())
+				l.onListenerLeft(listener);
+			listeners.remove(userId);
+		} else {
+			log.warn("Can't find the listener {} on userLeft", userId);
+		}
+	}
+
+	private void handleVoiceUserMuted(JSONObject jobj) {
+		Listener listener = listeners.get(Integer.parseInt((String) getFromMessage(jobj, "voiceUserId")));
+
+		if (listener != null) {
+			listener.setMuted((Boolean) getFromMessage(jobj, "muted"));
+			for (OnListenerStatusChangeListener l : handler.getContext().getListenerStatusChangeListeners())
+				l.onChangeIsMuted(listener);
+		} else {
+			log.warn("Can't find the listener {} on userMute", listener.getUserId());
+		}
+	}
+
+	private void handleVoiceUserTalking(JSONObject jobj) {
+		Listener listener = listeners.get(Integer.parseInt((String) getFromMessage(jobj, "voiceUserId")));
+
+		if (listener != null) {
+			listener.setTalking((Boolean) getFromMessage(jobj, "talking"));
+			for (OnListenerStatusChangeListener l : handler.getContext().getListenerStatusChangeListeners())
+				l.onChangeIsTalking(listener);
+		} else {
+			log.warn("Can't find the listener {} on userTalk", listener.getUserId());
+		}
+	}
+
+	private void handleMeetingMuted(JSONObject jobj) {
+
+	}
 }

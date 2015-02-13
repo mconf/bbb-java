@@ -107,8 +107,10 @@ public abstract class VoiceConnection extends RtmpConnection {
          * netConnection.connect(uri, externUID, username);
          */
         JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
-        if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81)) {
+        if (version.equals(ApplicationService.VERSION_0_81)) {
             options.setArgs(meeting.getInternalUserID(), username);
+        } else if (version.equals(ApplicationService.VERSION_0_9)) {
+            options.setArgs(meeting.getMeetingID(), meeting.getInternalUserID(), username);
         } else {
             options.setArgs(meeting.getExternUserID(), context.getMyUserId() + "-" + meeting.getFullname());
         }
@@ -138,7 +140,8 @@ public abstract class VoiceConnection extends RtmpConnection {
         Command command;
         List<Object> args = new ArrayList<Object>();
         args.add("default");
-        if (context.getJoinService().getApplicationService().getVersion().equals(ApplicationService.VERSION_0_81)) {
+        if (version.equals(ApplicationService.VERSION_0_81) ||
+                version.equals(ApplicationService.VERSION_0_9)) {
             args.add(username);
         } else {
             args.add(context.getJoinService().getJoinedMeeting().getFullname());
