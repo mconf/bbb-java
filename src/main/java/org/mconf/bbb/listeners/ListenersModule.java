@@ -347,14 +347,32 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleUserJoinedVoice(JSONObject jobj) {
-		System.out.println(jobj.toString());
 		JSONObject user = (JSONObject) getFromMessage(jobj, "user");
 		Listener l = new Listener((JSONObject) getFromMessage(user, "voiceUser"));
 		onListenerJoined(l);
 	}
 
-	private void handleUserLeftVoice(JSONObject jobj) {
+	private Integer getUserId(String participantId) {
+		for (Map.Entry<Integer, Listener> entry : listeners.entrySet()) {
+			Listener l = entry.getValue();
+			if (participantId.equals(l.getParticipantId())) return entry.getKey();
+		}
+		return -1;
+	}
 
+	private void handleUserLeftVoice(JSONObject jobj) {
+		JSONObject user = (JSONObject) getFromMessage(jobj, "user");
+		String participantId = (String) getFromMessage(user, "userId");
+		Integer userId = getUserId(participantId);
+		Listener listener = listeners.get(userId);
+
+		if (listener != null) {
+			for (OnListenerLeftListener l : handler.getContext().getListenerLeftListeners())
+				l.onListenerLeft(listener);
+			listeners.remove(userId);
+		} else {
+			log.warn("Can't find the listener {} on userLeft", userId);
+		}
 	}
 
 	private void handleVoiceUserMuted(JSONObject jobj) {
