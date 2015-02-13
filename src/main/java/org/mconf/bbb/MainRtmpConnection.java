@@ -272,10 +272,6 @@ public class MainRtmpConnection extends RtmpConnection {
 	}
 
 	private void handleCommandMessageFromServer(Command cmd) {
-		if (version.equals(ApplicationService.VERSION_0_9)) {
-			context.onMessageFromServer090(cmd);
-		} else {
-			context.onMessageFromServer(cmd);
-		}
+		context.onMessageFromServer(cmd, version);
 	}
 }

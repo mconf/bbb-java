@@ -299,7 +299,7 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 		return l;
 	}
 
-	public boolean onMessageFromServer090(Command command) {
+	public boolean onMessageFromServer(Command command) {
 		String msgName = (String) command.getArg(0);
 		switch (msgName) {
 			case "getUsersReply":

@@ -265,6 +265,15 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	}
 
 	public boolean onMessageFromServer(Command command) {
+		switch (version) {
+			case ApplicationService.VERSION_0_9:
+				return handle0Dot9MessageFromServer(command);
+			default:
+				return handleMessageFromServer(command);
+		}
+	}
+
+	private boolean handleMessageFromServer(Command command) {
 		String type = (String) command.getArg(0);
 		if (type.equals("ChatReceivePublicMessageCommand") || type.equals("ChatReceivePrivateMessageCommand")) {
 			onMessageReceived(command.getArg(1));
@@ -282,7 +291,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		}
 	}
 
-	public boolean onMessageFromServer090(Command command) {
+	public boolean handle0Dot9MessageFromServer(Command command) {
 		String msgName = (String) command.getArg(0);
 		switch (msgName) {
 			case "ChatRequestMessageHistoryReply":

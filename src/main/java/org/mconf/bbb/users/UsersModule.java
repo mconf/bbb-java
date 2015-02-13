@@ -350,7 +350,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		}
 	}
 
-	public boolean onMessageFromServer090(Command command) {
+	public boolean onMessageFromServer(Command command) {
 		String msgName = (String) command.getArg(0);
 		switch (msgName) {
 			case "validateAuthTokenReply":

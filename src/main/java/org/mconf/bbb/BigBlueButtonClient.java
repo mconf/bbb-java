@@ -30,6 +30,7 @@ import java.util.Set;
 import org.jboss.netty.channel.Channel;
 import org.mconf.bbb.api.JoinServiceBase;
 import org.mconf.bbb.api.JoinServiceProxy;
+import org.mconf.bbb.api.ApplicationService;
 import org.mconf.bbb.chat.ChatMessage;
 import org.mconf.bbb.chat.ChatModule;
 import org.mconf.bbb.listeners.IListener;
@@ -333,25 +334,18 @@ public class BigBlueButtonClient {
 	public boolean removeAudioListener(OnAudioListener listener) { return audioListeners.remove(listener); }
 	public Set<OnAudioListener> getAudioListeners() { return audioListeners; }
 
-	public boolean onMessageFromServer(Command command) {
-		if (chatModule.onMessageFromServer(command))
+	public boolean onMessageFromServer(Command command, String version) {
+		if (version.equals(ApplicationService.VERSION_0_9)) {
+			if (usersModule.onMessageFromServer(command) ||
+				listenersModule.onMessageFromServer(command) ||
+				chatModule.onMessageFromServer(command))
 			return true;
-		else {
-			log.warn("Unhandled onMessageFromServer: " + command.getArg(0));
-			return false;
+		} else {
+			if (chatModule.onMessageFromServer(command))
+				return true;
 		}
-	}
 
-	public boolean onMessageFromServer090(Command command) {
-		if (usersModule.onMessageFromServer090(command) ||
-				listenersModule.onMessageFromServer090(command) ||
-				chatModule.onMessageFromServer090(command))
-			return true;
-		else {
-			System.out.println("Unhandled onMessageFromServer: " + command.getArg(0));
-			log.warn("Unhandled onMessageFromServer: " + command.getArg(0));
-			return false;
-		}
+		log.warn("Unhandled onMessageFromServer: " + command.getArg(0));
+		return false;
 	}
-
 }
