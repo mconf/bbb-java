@@ -347,6 +347,7 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleUserJoinedVoice(JSONObject jobj) {
+		System.out.println(jobj.toString());
 		JSONObject user = (JSONObject) getFromMessage(jobj, "user");
 		Listener l = new Listener((JSONObject) getFromMessage(user, "voiceUser"));
 		onListenerJoined(l);
@@ -357,11 +358,27 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleVoiceUserMuted(JSONObject jobj) {
+		Listener listener = listeners.get(Integer.parseInt((String) getFromMessage(jobj, "voiceUserId")));
 
+		if (listener != null) {
+			listener.setMuted((Boolean) getFromMessage(jobj, "muted"));
+			for (OnListenerStatusChangeListener l : handler.getContext().getListenerStatusChangeListeners())
+				l.onChangeIsMuted(listener);
+		} else {
+			log.warn("Can't find the listener {} on userMute", listener.getUserId());
+		}
 	}
 
 	private void handleVoiceUserTalking(JSONObject jobj) {
+		Listener listener = listeners.get(Integer.parseInt((String) getFromMessage(jobj, "voiceUserId")));
 
+		if (listener != null) {
+			listener.setTalking((Boolean) getFromMessage(jobj, "talking"));
+			for (OnListenerStatusChangeListener l : handler.getContext().getListenerStatusChangeListeners())
+				l.onChangeIsTalking(listener);
+		} else {
+			log.warn("Can't find the listener {} on userTalk", listener.getUserId());
+		}
 	}
 
 	private void handleMeetingMuted(JSONObject jobj) {

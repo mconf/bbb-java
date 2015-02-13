@@ -358,7 +358,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 				return true;
 			case "getUsersReply":
 				handleGetUsersReply(getMessage(command.getArg(1)));
-				// we return false so listeners can work this message too
+				// We return false so listeners can handle this message too
 				return false;
 			case "participantJoined":
 				handleParticipantJoined(getMessage(command.getArg(1)));
@@ -453,8 +453,30 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		onParticipantLeft(p);
 	}
 
-	private void handleAssignPresenterCallback(JSONObject jobj) {
+	private void handleUserRaisedHand(JSONObject jobj) {
+		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+		onParticipantStatusChange(p, "raiseHand", true);
+	}
 
+	private void handleUserLoweredHand(JSONObject jobj) {
+		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+		onParticipantStatusChange(p, "raiseHand", false);
+	}
+
+	private void handleParticipantStatusChange(JSONObject jobj) {
+//		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+//		String k = (String) getFromMessage(jobj, "status");
+//		Boolean v = (Boolean) getFromMessage(jobj, "value");
+//		onParticipantStatusChange(p, k, v);
+	}
+
+	private void handleAssignPresenterCallback(JSONObject jobj) {
+//		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+//		onParticipantStatusChange(p, "presenter", true);
+	}
+
+	private void handleJoinedMeeting(JSONObject jobj) {
+		// participantJoined seems to send the same message, so I think we don't need to handle this one
 	}
 
 	private void handleLogout(JSONObject jobj) {
@@ -465,27 +487,11 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	}
 
-	private void handleParticipantStatusChange(JSONObject jobj) {
-
-	}
-
-	private void handleUserRaisedHand(JSONObject jobj) {
-
-	}
-
-	private void handleUserLoweredHand(JSONObject jobj) {
-
-	}
-
 	private void handleGetRecordingStatusReply(JSONObject jobj) {
 
 	}
 
 	private void handleRecordingStatusChanged(JSONObject jobj) {
-
-	}
-
-	private void handleJoinedMeeting(JSONObject jobj) {
 
 	}
 
