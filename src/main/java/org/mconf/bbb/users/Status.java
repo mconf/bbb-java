@@ -42,7 +42,7 @@ public class Status {
 
 	public Status(JSONObject jobj) {
 		try {
-			raiseHand = jobj.getBoolean("raiseHand");
+//			raiseHand = jobj.getBoolean("raiseHand");
 			hasStream = jobj.getBoolean("hasStream");
 			presenter = jobj.getBoolean("presenter");
 			streamName = jobj.getString("webcamStream");
