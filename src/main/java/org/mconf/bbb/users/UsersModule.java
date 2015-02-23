@@ -60,7 +60,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	public UsersModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
 		
-		if (version.equals(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_9) || version.equals(ApplicationService.VERSION_0_81)) {
 			participantsSO = null;
 			startModules();
 			doQueryParticipants();
@@ -291,7 +291,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 			
 			cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", true);
 			handler.writeCommandExpectingResult(channel, cmd);
-		} if (version.equals(ApplicationService.VERSION_0_9)) {
+		} if (version.equals(ApplicationService.VERSION_0_9) || version.equals(ApplicationService.VERSION_0_81)) {
 			Command cmd = new CommandAmf0("participants.shareWebcam", null, streamName);
 			handler.writeCommandExpectingResult(channel, cmd);
 		}
@@ -308,7 +308,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	
 			cmd = new CommandAmf0("participants.setParticipantStatus", null, handler.getContext().getMyUserId(), "hasStream", false);
 			handler.writeCommandExpectingResult(channel, cmd);
-		} if (version.equals(ApplicationService.VERSION_0_9)) {
+		} if (version.equals(ApplicationService.VERSION_0_9) || version.equals(ApplicationService.VERSION_0_81)) {
 			Command cmd = new CommandAmf0("participants.unshareWebcam", null);
 			handler.writeCommandExpectingResult(channel, cmd);
 		}

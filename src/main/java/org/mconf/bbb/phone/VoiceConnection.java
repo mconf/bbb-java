@@ -107,9 +107,10 @@ public abstract class VoiceConnection extends RtmpConnection {
          * netConnection.connect(uri, externUID, username);
          */
         JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
-        if (version.equals(ApplicationService.VERSION_0_81)) {
-            options.setArgs(meeting.getInternalUserID(), username);
-        } else if (version.equals(ApplicationService.VERSION_0_9)) {
+//        if (version.equals(ApplicationService.VERSION_0_81)) {
+//            options.setArgs(meeting.getInternalUserID(), username);
+//        } else if (version.equals(ApplicationService.VERSION_0_9)) {
+        if (version.equals(ApplicationService.VERSION_0_9) || version.equals(ApplicationService.VERSION_0_81)) {
             options.setArgs(meeting.getMeetingID(), meeting.getInternalUserID(), username);
         } else {
             options.setArgs(meeting.getExternUserID(), context.getMyUserId() + "-" + meeting.getFullname());

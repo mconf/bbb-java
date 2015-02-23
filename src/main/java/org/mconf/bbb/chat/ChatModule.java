@@ -67,7 +67,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		else
 			MESSAGE_ENCODING = MESSAGE_ENCODING_TYPED_OBJECT;
 		
-		if (version.equals(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_9) || version.equals(ApplicationService.VERSION_0_81)) {
 			publicChatSO = null;
 			privateChatSO = null;
 			publicChatMessages.clear();
@@ -267,6 +267,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	public boolean onMessageFromServer(Command command) {
 		switch (version) {
 			case ApplicationService.VERSION_0_9:
+			case ApplicationService.VERSION_0_81:
 				return handle0Dot9MessageFromServer(command);
 			default:
 				return handleMessageFromServer(command);

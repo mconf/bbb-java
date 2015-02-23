@@ -75,7 +75,7 @@ public abstract class JoinServiceBase {
 			e.printStackTrace();
 			log.error("Can't get the url {}", createUrl);
 		}
-		if (getVersion() == ApplicationService.VERSION_0_9) {
+		if (getVersion() == ApplicationService.VERSION_0_9 || getVersion() == ApplicationService.VERSION_0_81) {
 			if (ParserUtils.getNodeValueFromResponse(response, "returncode").equals("SUCCESS"))
 				return E_OK;
 		} else {
@@ -177,7 +177,7 @@ public abstract class JoinServiceBase {
 	        EntityUtils.consume(httpResponse.getEntity());
 			String enterResponse = getUrl(client, enterUrl).replace("</response>", "<server>" + currentHost.toURI() + "</server></response>");
 			
-			if (getVersion() == ApplicationService.VERSION_0_9) {
+			if (getVersion() == ApplicationService.VERSION_0_9 || getVersion() == ApplicationService.VERSION_0_81) {
 				joinedMeeting.parseJSON(enterResponse);
 			} else {
 				joinedMeeting.parseXML(enterResponse);

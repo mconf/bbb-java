@@ -68,7 +68,7 @@ public abstract class VideoReceiverConnection extends RtmpConnection {
 	
 	@Override
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-		if (version.equals(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_9) || version.equals(ApplicationService.VERSION_0_81)) {
 			Object[] params = new Object[2];
 			params[0] = context.getJoinService().getJoinedMeeting().getMeetingID();
 			params[1] = context.getMyUserId();

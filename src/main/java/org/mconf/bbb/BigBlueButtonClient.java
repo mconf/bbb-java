@@ -335,7 +335,7 @@ public class BigBlueButtonClient {
 	public Set<OnAudioListener> getAudioListeners() { return audioListeners; }
 
 	public boolean onMessageFromServer(Command command, String version) {
-		if (version.equals(ApplicationService.VERSION_0_9)) {
+		if (version.equals(ApplicationService.VERSION_0_9) || version.equals(ApplicationService.VERSION_0_81)) {
 			if (usersModule.onMessageFromServer(command) ||
 				listenersModule.onMessageFromServer(command) ||
 				chatModule.onMessageFromServer(command))
