@@ -139,7 +139,7 @@ public abstract class JoinServiceBase {
 
 	private int joinResponse() {
 		if (joinedMeeting.getReturncode().equals("SUCCESS")) {				
-			if (joinedMeeting.getServer().length() != 0)
+			if (joinedMeeting.getServer() != null)
 				appService = new ApplicationService(joinedMeeting.getServer());
 			else
 				appService = new ApplicationService(serverUrl, getVersion());
