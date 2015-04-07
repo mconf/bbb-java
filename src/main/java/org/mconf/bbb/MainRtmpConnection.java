@@ -164,11 +164,10 @@ public class MainRtmpConnection extends RtmpConnection {
 	private void setMyUserId(Channel channel) {
 		JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
 		context.setMyUserId(meeting.getInternalUserID());
+		context.createUsersModule(this, channel);
 		connected = true;
 		for (OnConnectedListener l : context.getConnectedListeners())
 			l.onConnectedSuccessfully();
-
-		context.createUsersModule(this, channel);
 	}
 
     public void doGetMyUserId(Channel channel) {

@@ -82,7 +82,8 @@ public class BigBlueButtonClient {
 	}
 
 	public void createChatModule(MainRtmpConnection handler, Channel channel) {
-		chatModule = new ChatModule(handler, channel);
+		if (chatModule == null)
+			chatModule = new ChatModule(handler, channel);
 	}
 
 	public ChatModule getChatModule() {
@@ -91,7 +92,8 @@ public class BigBlueButtonClient {
 
 	public void createUsersModule(MainRtmpConnection handler,
 			Channel channel) {
-		usersModule = new UsersModule(handler, channel);
+		if (usersModule == null)
+			usersModule = new UsersModule(handler, channel);
 	}
 
 	public UsersModule getUsersModule() {
@@ -100,14 +102,8 @@ public class BigBlueButtonClient {
 
 	public void createListenersModule(MainRtmpConnection handler,
 			Channel channel) {
-		listenersModule = new ListenersModule(handler, channel);
-	}
-
-	public boolean areModulesCreated() {
-		if (listenersModule == null || chatModule == null)
-			return false;
-		else
-			return true;
+		if (listenersModule == null)
+			listenersModule = new ListenersModule(handler, channel);
 	}
 
 	public ListenersModule getListenersModule() {

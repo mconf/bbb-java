@@ -344,10 +344,8 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void startModules() {
-		if (!handler.getContext().areModulesCreated()) {
-			handler.getContext().createChatModule(handler, channel);
-			handler.getContext().createListenersModule(handler, channel);
-		}
+		handler.getContext().createChatModule(handler, channel);
+		handler.getContext().createListenersModule(handler, channel);
 	}
 
 	public boolean onMessageFromServer(Command command) {
