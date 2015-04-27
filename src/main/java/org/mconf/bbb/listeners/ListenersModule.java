@@ -388,14 +388,15 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleVoiceUserTalking(JSONObject jobj) {
-		Listener listener = listeners.get(Integer.parseInt((String) getFromMessage(jobj, "voiceUserId")));
+		Integer voiceUserId = Integer.parseInt((String) getFromMessage(jobj, "voiceUserId"));
+		Listener listener = listeners.get(voiceUserId);
 
 		if (listener != null) {
 			listener.setTalking((Boolean) getFromMessage(jobj, "talking"));
 			for (OnListenerStatusChangeListener l : handler.getContext().getListenerStatusChangeListeners())
 				l.onChangeIsTalking(listener);
 		} else {
-			log.warn("Can't find the listener {} on userTalk", listener.getUserId());
+			log.warn("Can't find the listener {} on userTalk", voiceUserId);
 		}
 	}
 

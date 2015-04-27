@@ -164,11 +164,10 @@ public class MainRtmpConnection extends RtmpConnection {
 	private void setMyUserId(Channel channel) {
 		JoinedMeeting meeting = context.getJoinService().getJoinedMeeting();
 		context.setMyUserId(meeting.getInternalUserID());
+		context.createModules(this, channel);
 		connected = true;
 		for (OnConnectedListener l : context.getConnectedListeners())
 			l.onConnectedSuccessfully();
-
-		context.createUsersModule(this, channel);
 	}
 
     public void doGetMyUserId(Channel channel) {
@@ -260,7 +259,7 @@ public class MainRtmpConnection extends RtmpConnection {
 				}
 			} else if (!version.equals(ApplicationService.VERSION_0_9) && !version.equals(ApplicationService.VERSION_0_81)) {
 				if (onGetMyUserId(resultFor, cmd)) {
-					context.createUsersModule(this, channel);
+					context.createModules(this, channel);
 				}
 			} else context.onCommand(resultFor, cmd);
 		} else log.warn("result for method without tracked transaction");

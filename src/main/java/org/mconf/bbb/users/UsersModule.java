@@ -62,8 +62,6 @@ public class UsersModule extends Module implements ISharedObjectListener {
 		
 		if (version.equals(ApplicationService.VERSION_0_9) || version.equals(ApplicationService.VERSION_0_81)) {
 			participantsSO = null;
-			startModules();
-			doQueryParticipants();
 			doAuthTokenValidation();
 		} else {
 			participantsSO = handler.getSharedObject("participantsSO", false);
@@ -328,11 +326,15 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	@Override
 	public boolean onCommand(String resultFor, Command command) {
+/*
+		// This code used to trigger the chat and listeners modules
 		if (onQueryParticipants(resultFor, command)) {
-			startModules();
+			// Init Listeners and Chat Module
 			return true;
 		} else
 			return false;
+*/
+		return false;
 	}
 
 	public int getModeratorCount() {
@@ -341,13 +343,6 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	public int getParticipantCount() {
 		return participantCount;
-	}
-
-	private void startModules() {
-		if (!handler.getContext().areModulesCreated()) {
-			handler.getContext().createChatModule(handler, channel);
-			handler.getContext().createListenersModule(handler, channel);
-		}
 	}
 
 	public boolean onMessageFromServer(Command command) {
@@ -464,15 +459,19 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleParticipantStatusChange(JSONObject jobj) {
-//		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
-//		String k = (String) getFromMessage(jobj, "status");
-//		Boolean v = (Boolean) getFromMessage(jobj, "value");
-//		onParticipantStatusChange(p, k, v);
+/*
+		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+		String k = (String) getFromMessage(jobj, "status");
+		Boolean v = (Boolean) getFromMessage(jobj, "value");
+		onParticipantStatusChange(p, k, v);
+*/
 	}
 
 	private void handleAssignPresenterCallback(JSONObject jobj) {
-//		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
-//		onParticipantStatusChange(p, "presenter", true);
+/*
+		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
+		onParticipantStatusChange(p, "presenter", true);
+*/
 	}
 
 	private void handleJoinedMeeting(JSONObject jobj) {

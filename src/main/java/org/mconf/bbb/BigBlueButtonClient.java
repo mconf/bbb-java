@@ -81,36 +81,21 @@ public class BigBlueButtonClient {
 		return getUsersModule().getParticipants().get(myUserId);
 	}
 
-	public void createChatModule(MainRtmpConnection handler, Channel channel) {
-		chatModule = new ChatModule(handler, channel);
+	public void createModules(MainRtmpConnection handler, Channel channel) {
+		if (usersModule == null) usersModule = new UsersModule(handler, channel);
+		if (listenersModule == null) listenersModule = new ListenersModule(handler, channel);
+		if (chatModule == null) chatModule = new ChatModule(handler, channel);
 	}
 
 	public ChatModule getChatModule() {
 		return chatModule;
 	}
 
-	public void createUsersModule(MainRtmpConnection handler,
-			Channel channel) {
-		usersModule = new UsersModule(handler, channel);
-	}
-
 	public UsersModule getUsersModule() {
 		return usersModule;
 	}
 
-	public void createListenersModule(MainRtmpConnection handler,
-			Channel channel) {
-		listenersModule = new ListenersModule(handler, channel);
-	}
-
-	public boolean areModulesCreated() {
-		if (listenersModule == null || chatModule == null)
-			return false;
-		else
-			return true;
-	}
-
-	public ListenersModule getListenersModule() {
+	public  ListenersModule getListenersModule() {
 		return listenersModule;
 	}
 
@@ -147,19 +132,19 @@ public class BigBlueButtonClient {
 	}
 
 	public Collection<Participant> getParticipants() {
-		return usersModule.getParticipants().values();
+		return getUsersModule().getParticipants().values();
 	}
 
 	public List<ChatMessage> getPublicChatMessages() {
-		return chatModule.getPublicChatMessage();
+		return getChatModule().getPublicChatMessage();
 	}
 
 	public void sendPrivateChatMessage(String message, String userId) {
-		chatModule.sendPrivateChatMessage(message, userId);
+		getChatModule().sendPrivateChatMessage(message, userId);
 	}
 
 	public void sendPublicChatMessage(String message) {
-		chatModule.sendPublicChatMessage(message);
+		getChatModule().sendPublicChatMessage(message);
 	}
 
 	public void raiseHand(boolean value) {
@@ -167,27 +152,27 @@ public class BigBlueButtonClient {
 	}
 	
 	public void raiseHand(String userId, boolean value) {
-		usersModule.raiseHand(userId, value);
+		getUsersModule().raiseHand(userId, value);
 	}
 	
 	public void assignPresenter(String userId) {
-		usersModule.assignPresenter(userId);
+		getUsersModule().assignPresenter(userId);
 	}
 
 	public void kickUser(String userId) {
-		usersModule.kickUser(userId);
+		getUsersModule().kickUser(userId);
 	}
 
 	public void kickListener(int listenerId) {
-		listenersModule.doEjectUser(listenerId);
+		getListenersModule().doEjectUser(listenerId);
 	}
 
 	public void muteUnmuteListener(int listenerId, boolean value){
-		listenersModule.doMuteUnmuteUser(listenerId,value);
+		getListenersModule().doMuteUnmuteUser(listenerId,value);
 	}
 
 	public void muteUnmuteRoom(boolean value) {
-		listenersModule.doMuteAllUsers(value);
+		getListenersModule().doMuteAllUsers(value);
 	}
 
 	public static void main(String[] args) {
@@ -201,9 +186,9 @@ public class BigBlueButtonClient {
 	}
 
 	public boolean onCommand(String resultFor, Command command) {
-		if (usersModule.onCommand(resultFor, command)
-				|| chatModule.onCommand(resultFor, command)
-				|| listenersModule.onCommand(resultFor, command))
+		if (getUsersModule().onCommand(resultFor, command)
+				|| getChatModule().onCommand(resultFor, command)
+				|| getListenersModule().onCommand(resultFor, command))
 			return true;
 		else
 			return false;
@@ -335,13 +320,13 @@ public class BigBlueButtonClient {
 	public Set<OnAudioListener> getAudioListeners() { return audioListeners; }
 
 	public boolean onMessageFromServer(Command command, String version) {
-		if (version.equals(ApplicationService.VERSION_0_9) || version.equals(ApplicationService.VERSION_0_81)) {
-			if (usersModule.onMessageFromServer(command) ||
-				listenersModule.onMessageFromServer(command) ||
-				chatModule.onMessageFromServer(command))
+		if (version.equals(ApplicationService.VERSION_0_9)) {
+			if (getUsersModule().onMessageFromServer(command) ||
+				getListenersModule().onMessageFromServer(command) ||
+				getChatModule().onMessageFromServer(command))
 			return true;
 		} else {
-			if (chatModule.onMessageFromServer(command))
+			if (getChatModule().onMessageFromServer(command))
 				return true;
 		}
 
