@@ -57,7 +57,7 @@ public class JoinedMeeting {
 	private String internalUserID;
 
 	// guest is a new feature added on Mconf-Live 0.2
-	private String guest = "false";
+	private String guest = "";
 
 	public JoinedMeeting() {
 		
@@ -160,8 +160,12 @@ public class JoinedMeeting {
 			mode = (String) response.get("mode");
 			record = (String) response.get("record");
 			welcome = (String) response.get("welcome");
-			guest = (String) response.get("guest");
-//			server = (String) response.get("server");
+			if(response.has("guest")) {
+				guest = (String) response.get("guest");
+			}
+			if(response.has("server")) {
+				server = (String) response.get("server");
+			}
 		} else {
 			message = (String) response.get("message");
 		}

@@ -133,7 +133,6 @@ public class MainRtmpConnection extends RtmpConnection {
 		args.add(meeting.getExternUserID());
 		args.add(meeting.getInternalUserID());
 		if (version.equals(ApplicationService.VERSION_0_9)) {
-			args.add(context.getJoinService().getLockOnStart());
 			args.add(context.getJoinService().getMuteOnStart());
 			args.add(context.getJoinService().getLockSettings());
 		}
