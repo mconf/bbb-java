@@ -52,7 +52,7 @@ public abstract class JoinServiceBase {
 	protected BbbServerConfig serverConfig = null;
 	
 	public abstract String getVersion();
-	protected abstract String getCreateMeetingUrl(String meetingID);
+	protected abstract String getCreateMeetingUrl(String meetingID, boolean record);
 	protected abstract String getLoadUrl();
 	protected abstract String getJoinUrl(Meeting meeting, String name, boolean moderator);
 	protected abstract String getApiPath();
@@ -66,7 +66,11 @@ public abstract class JoinServiceBase {
 	}
 	
 	public int createMeeting(String meetingID) {
-		String createUrl = getFullDemoPath() + getCreateMeetingUrl(meetingID);
+		return createMeeting(meetingID, false);
+	}
+	
+	public int createMeeting(String meetingID, boolean record) {
+		String createUrl = getFullDemoPath() + getCreateMeetingUrl(meetingID, record);
 		log.debug("create URL: {}", createUrl);
 		String response = "Unknown error";
 		try {
@@ -138,12 +142,13 @@ public abstract class JoinServiceBase {
 	}
 
 	private int joinResponse() {
-		if (joinedMeeting.getReturncode().equals("SUCCESS")) {				
-			if (joinedMeeting.getServer() != null)
+		if (joinedMeeting.getReturncode().equals("SUCCESS")) {
+			if (joinedMeeting.getServer().length() != 0)
 				appService = new ApplicationService(joinedMeeting.getServer());
 			else
 				appService = new ApplicationService(serverUrl, getVersion());
-			return E_OK;
+
+			return setServerConfiguration();
 		} else {
 			if (joinedMeeting.getMessage() != null)
 				log.error(joinedMeeting.getMessage());

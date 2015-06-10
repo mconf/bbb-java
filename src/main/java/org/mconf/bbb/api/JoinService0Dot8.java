@@ -31,7 +31,7 @@ public class JoinService0Dot8 extends JoinServiceBase {
 	}
 	
 	@Override
-	protected String getCreateMeetingUrl(String meetingID) {
+	protected String getCreateMeetingUrl(String meetingID, boolean record) {
 		String parameters = "action=create" + "&meetingID=" + urlEncode(meetingID) + "&timestamp=" + timestamp;
 		return "?" + parameters + "&checksum=" + checksum(parameters + salt);
 	}

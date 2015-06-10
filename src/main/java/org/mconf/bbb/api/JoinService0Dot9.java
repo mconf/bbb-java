@@ -23,9 +23,9 @@ public class JoinService0Dot9 extends JoinServiceBase {
 	}
 	
 	@Override
-	protected String getCreateMeetingUrl(String meetingID) {
+	protected String getCreateMeetingUrl(String meetingID, boolean record) {
 		String action = "create";
-		String parameters = "meetingID=" + urlEncode(meetingID);
+		String parameters = "meetingID=" + urlEncode(meetingID) + "&record=" + record;
 		return action + "?" + parameters + "&checksum=" + checksum(action + parameters + salt);
 	}
 
@@ -44,11 +44,6 @@ public class JoinService0Dot9 extends JoinServiceBase {
 	}
 	
 	@Override
-	public int join(String meetingID, String name, boolean moderator) {
-		return super.join(meetingID, name, moderator);
-	}
-
-	@Override
 	protected String getLoadUrl() {
 		String action = "getMeetings";
 		return action + "?checksum=" + checksum(action + salt);
@@ -62,34 +57,5 @@ public class JoinService0Dot9 extends JoinServiceBase {
 	@Override
 	protected int join(String joinUrl) {
 		return standardJoin(joinUrl);
-	}
-
-	@Override
-	public int setServerConfiguration() {
-		String configAddress = serverUrl + "/client/conf/config.xml";
-
-		log.debug("Trying to fetch {}", configAddress);
-		try {
-			serverConfig = new BbbServerConfig(getUrl(configAddress));
-		} catch (Exception e) {
-			log.error("Couldn't get config.xml");
-			return E_CANNOT_GET_CONFIGXML;
-		}
-
-		return E_OK;
-	}
-
-	@Override
-	public void setServer(String serverUrl) {
-		Pattern pattern = Pattern.compile("(.*):(\\d*)");
-		Matcher matcher = pattern.matcher(serverUrl);
-		if (matcher.matches()) {
-			this.serverUrl = matcher.group(1);
-			this.serverPort = Integer.parseInt(matcher.group(2));
-		} else {
-			this.serverUrl = serverUrl;
-			this.serverPort = 80;
-		}
-		setServerConfiguration();
 	}
 }

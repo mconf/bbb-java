@@ -3,7 +3,7 @@ package org.mconf.bbb.api;
 public class JoinService0Dot7 extends JoinServiceBase {
 
 	@Override
-	protected String getCreateMeetingUrl(String meetingID) {
+	protected String getCreateMeetingUrl(String meetingID, boolean record) {
 		return "?action=create" + "&meetingID=" + urlEncode(meetingID);	
 	}
 
