@@ -353,7 +353,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 				return true;
 			case "getUsersReply":
 				handleGetUsersReply(getMessage(command.getArg(1)));
-				// We return false so listeners can handle this message too
+				// We return false so listeners module can handle this message too
 				return false;
 			case "participantJoined":
 				handleParticipantJoined(getMessage(command.getArg(1)));

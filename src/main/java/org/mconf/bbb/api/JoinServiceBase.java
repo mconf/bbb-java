@@ -308,10 +308,6 @@ public abstract class JoinServiceBase {
 		return serverConfig.getLockSettings();
 	}
 
-	public boolean getLockOnStart() {
-		return serverConfig.getLockOnStart();
-	}
-
 	public boolean getMuteOnStart() {
 		return serverConfig.getMuteOnStart();
 	}

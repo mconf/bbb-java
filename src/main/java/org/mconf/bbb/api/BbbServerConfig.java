@@ -58,14 +58,6 @@ public class BbbServerConfig {
 		return lockSettings;
 	}
 
-	public boolean getLockOnStart()
-	{
-		String lockOnStart = parser.getNodeAttribute("meeting", "lockOnStart");
-		if (lockOnStart != null) {
-			return Boolean.parseBoolean(lockOnStart);
-		} else return false;
-	}
-
 	public boolean getMuteOnStart()
 	{
 		String muteOnStart = parser.getNodeAttribute("meeting", "muteOnStart");

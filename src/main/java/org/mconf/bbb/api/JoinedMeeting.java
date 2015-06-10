@@ -160,8 +160,12 @@ public class JoinedMeeting {
 			mode = (String) response.get("mode");
 			record = (String) response.get("record");
 			welcome = (String) response.get("welcome");
-			guest = (String) response.get("guest");
-			server = response.has("server")? response.getString("server"): "";
+			if(response.has("guest")) {
+				guest = (String) response.get("guest");
+			}
+			if(response.has("server")) {
+				server = (String) response.get("server");
+			}
 		} else {
 			message = (String) response.get("message");
 		}

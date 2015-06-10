@@ -376,14 +376,15 @@ public class ListenersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleVoiceUserMuted(JSONObject jobj) {
-		Listener listener = listeners.get(Integer.parseInt((String) getFromMessage(jobj, "voiceUserId")));
+		Integer voiceUserId = Integer.parseInt((String) getFromMessage(jobj, "voiceUserId"));
+		Listener listener = listeners.get(voiceUserId);
 
 		if (listener != null) {
 			listener.setMuted((Boolean) getFromMessage(jobj, "muted"));
 			for (OnListenerStatusChangeListener l : handler.getContext().getListenerStatusChangeListeners())
 				l.onChangeIsMuted(listener);
 		} else {
-			log.warn("Can't find the listener {} on userMute", listener.getUserId());
+			log.warn("Can't find the listener {} on userMute", voiceUserId);
 		}
 	}
 
