@@ -33,6 +33,8 @@ import org.mconf.bbb.api.JoinServiceProxy;
 import org.mconf.bbb.api.ApplicationService;
 import org.mconf.bbb.chat.ChatMessage;
 import org.mconf.bbb.chat.ChatModule;
+import org.mconf.bbb.deskshare.DeskshareModule;
+import org.mconf.bbb.deskshare.DeskshareConnection;
 import org.mconf.bbb.listeners.IListener;
 import org.mconf.bbb.listeners.ListenersModule;
 import org.mconf.bbb.users.IParticipant;
@@ -58,6 +60,7 @@ public class BigBlueButtonClient {
 	private ChatModule chatModule = null;
 	private UsersModule usersModule = null;
 	private ListenersModule listenersModule = null;
+	private DeskshareModule deskshareModule = null;
 
 	public void setMyUserId(String myUserId) {
 		this.myUserId = myUserId;
@@ -85,6 +88,10 @@ public class BigBlueButtonClient {
 		if (usersModule == null) usersModule = new UsersModule(handler, channel);
 		if (listenersModule == null) listenersModule = new ListenersModule(handler, channel);
 		if (chatModule == null) chatModule = new ChatModule(handler, channel);
+	}
+
+	public void createDeskshareModule(DeskshareConnection handler, Channel channel) {
+		if (deskshareModule == null) deskshareModule = new DeskshareModule(handler, channel);
 	}
 
 	public ChatModule getChatModule() {
