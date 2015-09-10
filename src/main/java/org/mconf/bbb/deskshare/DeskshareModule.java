@@ -97,6 +97,8 @@ public class DeskshareModule implements ISharedObjectListener {
 			case "appletStarted":
 				break;
 			case "startViewing":
+				// deskSO.send("startViewing", captureWidth, captureHeight);
+				startedToViewStream();
 				break;
 			case "mouseLocationCallback":
 				break;
@@ -133,8 +135,19 @@ public class DeskshareModule implements ISharedObjectListener {
 		return false;
 	}
 
+	public boolean onStartedToViewStream(String resultFor, Command command) {
+		if (resultFor.equals("deskshare.startedToViewStream")) {
+			// TODO
+			log.debug(command.toString());
+			return true;
+		}
+		return false;
+	}
+
 	public boolean onCommand(String resultFor, Command command) {
 		if (onCheckIfStreamIsPublishing(resultFor, command)) {
+			return true;
+		} else if (onStartedToViewStream(resultFor, command)) {
 			return true;
 		}
 		return false;
@@ -144,8 +157,15 @@ public class DeskshareModule implements ISharedObjectListener {
 		return false;
 	}
 
+	// nc.call("deskshare.checkIfStreamIsPublishing", responder, room);
 	private void checkIfStreamIsPublishing() {
-		Command cmd = new CommandAmf0("deskshare.checkIfStreamIsPublishing", null);
+		Command cmd = new CommandAmf0("deskshare.checkIfStreamIsPublishing", null, this.conference);
+		this.handler.writeCommandExpectingResult(this.channel, cmd);
+	}
+
+	// nc.call("deskshare.startedToViewStream", null, stream);
+	private void startedToViewStream() {
+		Command cmd = new CommandAmf0("deskshare.startedToViewStream", null, this.conference);
 		this.handler.writeCommandExpectingResult(this.channel, cmd);
 	}
 }

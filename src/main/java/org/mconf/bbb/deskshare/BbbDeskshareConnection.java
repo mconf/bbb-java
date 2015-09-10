@@ -38,6 +38,7 @@ public class BbbDeskshareConnection extends DeskshareConnection {
 		options = new ClientOptions();
 		options.setClientVersionToUse(Utils.fromHex("00000000"));
 		options.setHost(context.getJoinService().getApplicationService().getServerUrl());
+		options.setStreamName(context.getJoinService().getJoinedMeeting().getConference());
 		options.setAppName("deskShare");
 	}
 
