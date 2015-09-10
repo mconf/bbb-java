@@ -70,7 +70,6 @@ public class DeskshareConnection extends RtmpConnection {
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
 		options.setArgs(context.getJoinService().getJoinedMeeting().getConference());
 		Command connect = Command.connect(options);
-		log.warn(connect.toString());
 		writeCommandExpectingResult(e.getChannel(), connect);
 	}
 
@@ -132,7 +131,7 @@ public class DeskshareConnection extends RtmpConnection {
 					log.debug("connect response: {}", cmd.toString());
 					channel.close();
 				}
-			} else context.onCommand(resultFor, cmd);
+			} else onCommand(resultFor, cmd);
 		} else log.warn("result for method without tracked transaction");
 	}
 
@@ -143,5 +142,9 @@ public class DeskshareConnection extends RtmpConnection {
 
 	private void handleCommandMessageFromServer(Command cmd) {
 		context.onMessageFromServer(cmd, version);
+	}
+
+	private void onCommand(String resultFor, Command command) {
+		context.getDeskshareModule().onCommand(resultFor, command);
 	}
 }

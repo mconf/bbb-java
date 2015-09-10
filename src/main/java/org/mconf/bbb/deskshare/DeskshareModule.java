@@ -53,8 +53,8 @@ public class DeskshareModule implements ISharedObjectListener {
 	private final IClientSharedObject deskSO;
 	private final String conference;
 
-	private int width;
-	private int height;
+	private Double width;
+	private Double height;
 	private Boolean publishing;
 
 	public DeskshareModule(DeskshareConnection handler, Channel channel) {
@@ -92,7 +92,19 @@ public class DeskshareModule implements ISharedObjectListener {
 	public void onSharedObjectSend(ISharedObjectBase so, String method, List<?> params) {
 		log.debug("onSharedObjectSend");
 
-		if (so.equals(deskSO)) {}
+		switch (method) {
+			case "appletStarted":
+				break;
+			case "startViewing":
+				break;
+			case "mouseLocationCallback":
+				break;
+			case "deskshareStreamStopped":
+				break;
+			default:
+				break;
+		}
+
 	}
 
 	@Override
@@ -110,7 +122,21 @@ public class DeskshareModule implements ISharedObjectListener {
 		log.debug("onSharedObjectUpdate 3");
 	}
 
+	public boolean onCheckIfStreamIsPublishing(String resultFor, Command command) {
+		if (resultFor.equals("deskshare.checkIfStreamIsPublishing")) {
+			Map<String, Object> args = (Map<String, Object>) command.getArg(0);
+			height = (Double) args.get("height");
+			width = (Double) args.get("width");
+			publishing = (Boolean) args.get("publishing");
+			return true;
+		}
+		return false;
+	}
+
 	public boolean onCommand(String resultFor, Command command) {
+		if (onCheckIfStreamIsPublishing(resultFor, command)) {
+			return true;
+		}
 		return false;
 	}
 

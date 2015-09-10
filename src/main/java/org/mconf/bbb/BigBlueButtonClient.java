@@ -102,8 +102,12 @@ public class BigBlueButtonClient {
 		return usersModule;
 	}
 
-	public  ListenersModule getListenersModule() {
+	public ListenersModule getListenersModule() {
 		return listenersModule;
+	}
+
+	public DeskshareModule getDeskshareModule() {
+		return deskshareModule;
 	}
 
 	public void createJoinService(String serverUrl) {
