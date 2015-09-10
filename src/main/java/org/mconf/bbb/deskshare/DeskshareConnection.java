@@ -42,6 +42,7 @@ import com.flazr.rtmp.RtmpMessage;
 import com.flazr.rtmp.client.ClientHandshakeHandler;
 import com.flazr.rtmp.client.ClientOptions;
 import com.flazr.rtmp.message.Command;
+import com.flazr.rtmp.message.Control;
 
 public class DeskshareConnection extends RtmpConnection {
 
@@ -83,6 +84,14 @@ public class DeskshareConnection extends RtmpConnection {
 		final RtmpMessage message = (RtmpMessage) me.getMessage();
 		switch(message.getHeader().getMessageType()) {
 			case CONTROL:
+				Control control = (Control) message;
+				switch(control.getType()) {
+					case PING_REQUEST:
+						final int time = control.getTime();
+						Control pong = Control.pingResponse(time);
+						channel.write(pong);
+						break;
+				}
 				break;
 
 			case COMMAND_AMF0:

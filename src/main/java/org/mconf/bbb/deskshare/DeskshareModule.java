@@ -49,6 +49,7 @@ public class DeskshareModule implements ISharedObjectListener {
 	private static final Logger log = LoggerFactory.getLogger(DeskshareModule.class);
 
 	private final DeskshareConnection handler;
+	// TODO: This must be changed when reconnecting
 	private final Channel channel;
 	private final IClientSharedObject deskSO;
 	private final String conference;
@@ -104,7 +105,6 @@ public class DeskshareModule implements ISharedObjectListener {
 			default:
 				break;
 		}
-
 	}
 
 	@Override
