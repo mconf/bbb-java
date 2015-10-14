@@ -53,7 +53,7 @@ public class JoinedMeeting {
 	private String record;
 	private String welcome;
 	private String message;
-	private String server;
+	private String server = "";
 	private String internalUserID;
 
 	// guest is a new feature added on Mconf-Live 0.2

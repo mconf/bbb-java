@@ -25,7 +25,7 @@ public class JoinService0Dot9 extends JoinServiceBase {
 	@Override
 	protected String getCreateMeetingUrl(String meetingID, boolean record) {
 		String action = "create";
-		String parameters = "meetingID=" + urlEncode(meetingID) + "&record=" + record;
+		String parameters = "meetingID=" + urlEncode(meetingID) + "&name=" + urlEncode(meetingID) + "&record=" + record;
 		return action + "?" + parameters + "&checksum=" + checksum(action + parameters + salt);
 	}
 

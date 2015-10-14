@@ -332,12 +332,12 @@ public class BigBlueButtonClient {
 
 	public boolean onMessageFromServer(Command command, String version) {
 		if (version.equals(ApplicationService.VERSION_0_9)) {
-			if (getUsersModule().onMessageFromServer(command) ||
-				getListenersModule().onMessageFromServer(command) ||
-				getChatModule().onMessageFromServer(command))
+			if ((getUsersModule() != null && getUsersModule().onMessageFromServer(command)) ||
+				(getListenersModule() != null && getListenersModule().onMessageFromServer(command)) ||
+				(getChatModule() != null && getChatModule().onMessageFromServer(command)))
 			return true;
 		} else {
-			if (getChatModule().onMessageFromServer(command))
+			if (getChatModule() != null && getChatModule().onMessageFromServer(command))
 				return true;
 		}
 
