@@ -34,6 +34,7 @@ import com.flazr.util.Utils;
 
 public class BbbVoiceConnection extends VoiceConnection {
 	private static final Logger log = LoggerFactory.getLogger(BbbVoiceConnection.class);
+	private boolean firstPacket;
 
 	public BbbVoiceConnection(BigBlueButtonClient context, RtmpReader reader, RtmpWriter writer) {
 		super(null, context);
@@ -56,6 +57,7 @@ public class BbbVoiceConnection extends VoiceConnection {
 	}
 
 	public boolean start() {
+		firstPacket = true;
 		return connect();
 	}
 
@@ -66,5 +68,9 @@ public class BbbVoiceConnection extends VoiceConnection {
 	@Override
 	protected void onAudio(Audio audio) {
 		log.debug("received audio package: {}", audio.getHeader().getTime());
+		if (firstPacket) {
+			firstPacket = false;
+			log.info("Receiving audio stream");
+		}
 	}
 }

@@ -54,6 +54,7 @@ public class BbbVideoReceiver {
 	private String userId;
 	private String streamName;
 	private VideoConnection videoConnection;
+	private Boolean firstPacket = true;
 	
 	public BbbVideoReceiver(String userId, BigBlueButtonClient context) {
 		this.userId = userId;
@@ -65,25 +66,31 @@ public class BbbVideoReceiver {
 		
 		streamName = null;
 		for (Participant p : context.getParticipants()) {
-			if (p.getUserId().equals(userId) && p.hasStream()) {
-				streamName = p.getStatus().getStreamName();
+			if (p.getUserId().equals(userId)) {
+				if (p.hasStream()) {
+					streamName = p.getStatus().getStreamName();
+				}
 				break;
 			}
 		}
 		
 		if (streamName == null) {
-			log.debug("The userId = {} has no stream", userId);
+			log.error("The userId = {} has no stream", userId);
 			return;
 		}
 		
 		opt.setWriterToSave(null);
 		opt.setStreamName(streamName);
-		
+
 		videoConnection = new VideoConnection(opt, context);
 	}
 	
 	protected void onVideo(Video video) {
 		log.debug("received video package: {}", video.getHeader().getTime());
+		if (firstPacket) {
+			firstPacket = false;
+			log.info("Receiving video {} from user {}", streamName, userId);
+		}
 	}
 	
 	public void start() {
