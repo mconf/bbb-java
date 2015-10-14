@@ -23,16 +23,14 @@ package org.mconf.bbb.deskshare;
 
 import java.util.Map;
 
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.Channels;
 import org.mconf.bbb.BigBlueButtonClient;
 import org.mconf.bbb.RtmpConnection;
-import org.red5.server.so.SharedObjectMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,13 +41,16 @@ import com.flazr.rtmp.client.ClientHandshakeHandler;
 import com.flazr.rtmp.client.ClientOptions;
 import com.flazr.rtmp.message.Command;
 import com.flazr.rtmp.message.Control;
+import com.flazr.rtmp.message.MessageType;
 
 public class DeskshareConnection extends RtmpConnection {
 
 	private static final Logger log = LoggerFactory.getLogger(DeskshareConnection.class);
+	private boolean firstPacket;
 
 	public DeskshareConnection(ClientOptions options, BigBlueButtonClient context) {
 		super(options, context);
+		closeChannelWhenStreamStopped = false;
 	}
 
 	@Override
@@ -79,81 +80,57 @@ public class DeskshareConnection extends RtmpConnection {
 	}
 
 	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) {
-		final Channel channel = me.getChannel();
-		final RtmpMessage message = (RtmpMessage) me.getMessage();
-		switch(message.getHeader().getMessageType()) {
-			case CONTROL:
-				Control control = (Control) message;
-				switch(control.getType()) {
-					case PING_REQUEST:
-						final int time = control.getTime();
-						Control pong = Control.pingResponse(time);
-						channel.write(pong);
-						break;
-				}
-				break;
-
-			case COMMAND_AMF0:
-			case COMMAND_AMF3:
-				Command command = (Command) message;                
-				String name = command.getName();
-				log.debug("server command: {}", name);
-				switch (name) {
-					case "_result":
-						handleCommandResult(command, channel);
-						break;
-					case "_error":
-						handleCommandError(command);
-						break;
-					case "onMessageFromServer":
-						handleCommandMessageFromServer(command);
-						break;
-					default:
-						log.error("unknown command: {}", name);
-						break;
-				}
-				break;
-
-			case SHARED_OBJECT_AMF0:
-			case SHARED_OBJECT_AMF3:
-				onSharedObject(channel, (SharedObjectMessage) message);
-				break;
-
-			default:
-				log.info("ignoring rtmp message: {}", message);
-				break;
+	protected void onCommandResult(Channel channel, Command command,
+			String resultFor) {
+		log.debug("result for method call: {}", resultFor);
+		if (resultFor.equals("connect")) {
+			String code = connectGetCode(command);
+			if (code.equals("NetConnection.Connect.Success")) {
+				context.createDeskshareModule(this, channel);
+			} else {
+				log.error("method connect result in {}, quitting", code);
+				log.debug("connect response: {}", command.toString());
+				channel.close();
+			}
+        } else if(resultFor.equals("createStream")) {
+            streamId = ((Double) command.getArg(0)).intValue();
+            log.debug("playStreamId to use: {}", streamId);
+            writer = options.getWriterToSave();
+            ClientOptions newOptions = new ClientOptions();
+            newOptions.setStreamName(options.getStreamName());
+            firstPacket = true;
+            channel.write(Command.play(streamId, newOptions));
+            channel.write(Control.setBuffer(streamId, 0));
+		} else {
+			context.getDeskshareModule().onCommand(resultFor, command);
+		}
+	}
+	
+	@Override
+	protected void onCommandCustom(Channel channel, Command command, String name) {
+		if (name.equals("onMessageFromServer")) {
+			context.onMessageFromServer(command, version);
 		}
 	}
 
-	private void handleCommandResult(Command cmd, Channel channel) {
-		String resultFor = transactionToCommandMap.get(cmd.getTransactionId());
-
-		if (resultFor != null) {
-			log.info("result for method call: {}", resultFor);
-			if (resultFor.equals("connect")) {
-				String code = connectGetCode(cmd);
-				if (code.equals("NetConnection.Connect.Success")) {
-					context.createDeskshareModule(this, channel);
-				} else {
-					log.error("method connect result in {}, quitting", code);
-					log.debug("connect response: {}", cmd.toString());
-					channel.close();
-				}
-			} else onCommand(resultFor, cmd);
-		} else log.warn("result for method without tracked transaction");
+	public void createStream(Channel channel) {
+		writeCommandExpectingResult(channel, Command.createStream());
+	}
+	
+	@Override
+	protected void onMultimedia(Channel channel, RtmpMessage message) {
+		super.onMultimedia(channel, message);
+		if (message.getHeader().getMessageType() == MessageType.VIDEO) {
+			log.debug("received deskshare package: {}", message.getHeader().getTime());
+			if (firstPacket) {
+				firstPacket = false;
+				log.info("Receiving deskshare stream");
+				context.getDeskshareModule().sendStartedViewing(channel);
+			}
+		}
 	}
 
-	private void handleCommandError(Command cmd) {
-		Map<String, Object> args = (Map<String, Object>) cmd.getArg(0);
-		log.error(args.get("code").toString() + ": " + args.get("description").toString());
-	}
-
-	private void handleCommandMessageFromServer(Command cmd) {
-		context.onMessageFromServer(cmd, version);
-	}
-
-	private void onCommand(String resultFor, Command command) {
-		context.getDeskshareModule().onCommand(resultFor, command);
+	public void destroyStream(Channel channel) {
+		writeCommandExpectingResult(channel, Command.closeStream(streamId));
 	}
 }

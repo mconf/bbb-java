@@ -21,20 +21,10 @@
 
 package org.mconf.bbb.deskshare;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.json.JSONObject;
-import org.json.JSONArray;
-import org.json.JSONException;
 
 import org.jboss.netty.channel.Channel;
-import org.mconf.bbb.deskshare.DeskshareConnection;
-import org.mconf.bbb.Module;
-import org.mconf.bbb.api.ApplicationService;
 import org.red5.server.api.IAttributeStore;
 import org.red5.server.api.so.IClientSharedObject;
 import org.red5.server.api.so.ISharedObjectBase;
@@ -61,11 +51,11 @@ public class DeskshareModule implements ISharedObjectListener {
 	public DeskshareModule(DeskshareConnection handler, Channel channel) {
 		this.handler = handler;
 		this.channel = channel;
-		this.conference = this.handler.getContext().getJoinService().getJoinedMeeting().getConference();
+		this.conference = handler.getContext().getJoinService().getJoinedMeeting().getConference();
 
-		deskSO = this.handler.getSharedObject(this.conference + "-deskSO", false);
+		deskSO = handler.getSharedObject(conference + "-deskSO", false);
 		deskSO.addSharedObjectListener(this);
-		deskSO.connect(this.channel);
+		deskSO.connect(channel);
 	}
 
 	@Override
@@ -97,12 +87,12 @@ public class DeskshareModule implements ISharedObjectListener {
 			case "appletStarted":
 				break;
 			case "startViewing":
-				// deskSO.send("startViewing", captureWidth, captureHeight);
-				startedToViewStream();
+				startViewing(channel);
 				break;
 			case "mouseLocationCallback":
 				break;
 			case "deskshareStreamStopped":
+				stopViewing(channel);
 				break;
 			default:
 				break;
@@ -137,8 +127,7 @@ public class DeskshareModule implements ISharedObjectListener {
 
 	public boolean onStartedToViewStream(String resultFor, Command command) {
 		if (resultFor.equals("deskshare.startedToViewStream")) {
-			// TODO
-			log.debug(command.toString());
+			// do nothing
 			return true;
 		}
 		return false;
@@ -146,6 +135,9 @@ public class DeskshareModule implements ISharedObjectListener {
 
 	public boolean onCommand(String resultFor, Command command) {
 		if (onCheckIfStreamIsPublishing(resultFor, command)) {
+			if (publishing) {
+				startViewing(channel);
+			}
 			return true;
 		} else if (onStartedToViewStream(resultFor, command)) {
 			return true;
@@ -160,12 +152,20 @@ public class DeskshareModule implements ISharedObjectListener {
 	// nc.call("deskshare.checkIfStreamIsPublishing", responder, room);
 	private void checkIfStreamIsPublishing() {
 		Command cmd = new CommandAmf0("deskshare.checkIfStreamIsPublishing", null, this.conference);
-		this.handler.writeCommandExpectingResult(this.channel, cmd);
+		handler.writeCommandExpectingResult(this.channel, cmd);
 	}
 
 	// nc.call("deskshare.startedToViewStream", null, stream);
-	private void startedToViewStream() {
+	public void sendStartedViewing(Channel channel) {
 		Command cmd = new CommandAmf0("deskshare.startedToViewStream", null, this.conference);
-		this.handler.writeCommandExpectingResult(this.channel, cmd);
+		handler.writeCommandExpectingResult(channel, cmd);
+	}
+	
+	private void startViewing(Channel channel) {
+		handler.createStream(channel);
+	}
+	
+	private void stopViewing(Channel channel) {
+		handler.destroyStream(channel);
 	}
 }
