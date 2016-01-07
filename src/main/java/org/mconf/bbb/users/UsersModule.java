@@ -56,6 +56,8 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	private Map<String, Participant> participants = new ConcurrentHashMap<String, Participant>();
 	private int moderatorCount = 0, participantCount = 0;
+	private String myUserId = null;
+	private boolean dispatchedJoinedToMyself = false;
 
 	public UsersModule(MainRtmpConnection handler, Channel channel) {
 		super(handler, channel);
@@ -140,10 +142,13 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	
 	private Participant getParticipant(Object param) {
 		String userId = getUserIdFromObject(param);
-		if (userId != null)
+		if (userId != null) {
+			log.debug("UserId isn't null {}", userId);
 			return participants.get(userId);
-		else
+		} else {
+			log.debug("UserId is null!");
 			return null;
+		}
 	}
 
 	@Override
@@ -213,7 +218,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	public void onParticipantJoined(Participant p) {
-		log.info("new participant: {}", p.toString());
+		log.debug("Adding {} to participants map", p.getUserId());
 		participants.put(p.getUserId(), p);
 		if (p.isModerator())
 			moderatorCount++;
@@ -240,6 +245,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	private void onParticipantStatusChange(Participant p, String key,
 			Object value) {
+		log.debug("onParticipantStatusChange is p null? {}", p == null);
 		log.debug("participantStatusChange: " + p.getName() + " status: " + key + " value: " + value.toString());
 		if (key.equals("presenter")) {
 			p.getStatus().setPresenter((Boolean) value);
@@ -347,6 +353,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 
 	public boolean onMessageFromServer(Command command) {
 		String msgName = (String) command.getArg(0);
+		log.debug("Message received: {}", command.getArg(1));
 		switch (msgName) {
 			case "validateAuthTokenReply":
 				handleValidateAuthTokenReply(getMessage(command.getArg(1)));
@@ -406,32 +413,47 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleValidateAuthTokenReply(JSONObject jobj) {
+		log.debug("handleValidateAuthTokenReply: {}", jobj.toString());
 		boolean valid = (boolean) getFromMessage(jobj, "valid");
+		myUserId = (String) getFromMessage(jobj, "userId");
 		if (!valid) {
 			log.error("Invalid AuthToken");
+		} else {
+			doQueryParticipants();
 		}
 	}
 
 	private void handleGetUsersReply(JSONObject jobj) {
-		participants.clear();
 		JSONArray users = (JSONArray) getFromMessage(jobj, "users");
 
 		for (int i = 0; i < users.length(); i++) {
 			try {
-				Participant p = new Participant(users.getJSONObject(i), version);
-				onParticipantJoined(p);
+				onJsonParticipantJoined(users.getJSONObject(i));
 			} catch (JSONException je) {
-				System.out.println(je.toString());
+				log.error(je.toString());
 			}
 		}
 	}
 
 	private void handleParticipantJoined(JSONObject jobj) {
-		Participant p = new Participant((JSONObject) getFromMessage(jobj, "user"), version);
-		onParticipantJoined(p);
+		onJsonParticipantJoined((JSONObject) getFromMessage(jobj, "user"));
+	}
+
+	private void onJsonParticipantJoined(JSONObject jobj) {
+		log.debug("New participant joined: {}", jobj.toString());
+		Participant p = new Participant(jobj, version);
+		if (p.getUserId().equals(myUserId)) {
+			if (! dispatchedJoinedToMyself) {
+				onParticipantJoined(p);
+				dispatchedJoinedToMyself = true;
+			}
+		} else {
+			onParticipantJoined(p);
+		}
 	}
 
 	private void handleUserSharedWebcam(JSONObject jobj) {
+		log.debug("Current participants map: {}", participants.toString());
 		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
 		String streamName = (String) getFromMessage(jobj, "webcamStream");
 		onParticipantStatusChange(p, "streamName", streamName);
@@ -459,6 +481,7 @@ public class UsersModule extends Module implements ISharedObjectListener {
 	}
 
 	private void handleParticipantStatusChange(JSONObject jobj) {
+		log.debug("Got handleParticipantStatusChange: {}", jobj.toString());
 /*
 		Participant p = getParticipant((String) getFromMessage(jobj, "userId"));
 		String k = (String) getFromMessage(jobj, "status");
