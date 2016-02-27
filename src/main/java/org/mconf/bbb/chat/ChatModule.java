@@ -192,7 +192,7 @@ public class ChatModule extends Module implements ISharedObjectListener {
 	}
 
 	/**
-	 * {@link} https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/modules/chat/services/PublicChatSharedObjectService.as#L89
+	 * {@link} https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/modules/chat/services/MessageSender.as#L51
 	 * @param message
 	 */
 	public void sendPublicChatMessage(String message) {
@@ -201,10 +201,10 @@ public class ChatModule extends Module implements ISharedObjectListener {
 		chatMessage.setUsername(handler.getContext().getJoinService().getJoinedMeeting().getFullname());
 		chatMessage.setUserId(handler.getContext().getMyUserId());
 
-    	Command command = new CommandAmf0("chat.sendMessage", null, chatMessage.encode());
+    	Command command = new CommandAmf0("chat.sendPublicMessage", null, chatMessage.encode());
     	handler.writeCommandExpectingResult(channel, command);
 	}
-	
+
 	/**
 	 * {@link} https://github.com/bigbluebutton/bigbluebutton/blob/master/bigbluebutton-client/src/org/bigbluebutton/modules/chat/services/PrivateChatSharedObjectService.as#L103
 	 * @param message
